@@ -25,3 +25,8 @@ Effect Display
 ![Alt text](result_img/draw_ocr5.jpg)
 
 ![Alt text](result_img/draw_ocr.jpg)
+
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=jingsongliujing/OnnxOCR&type=Date)](https://star-history.com/#jingsongliujing/OnnxOCR&Date)
