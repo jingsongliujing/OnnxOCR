@@ -39,3 +39,8 @@ PPOCRv4模型转onnx模型推理，精度和性能更高，推理速度比使用
 #### 感谢PaddleOcr
 
 https://github.com/PaddlePaddle/PaddleOCR
+
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=jingsongliujing/OnnxOCR&type=Date)](https://star-history.com/#jingsongliujing/OnnxOCR&Date)
