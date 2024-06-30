@@ -1,5 +1,5 @@
 English | [简体中文](./Readme_cn.md) |
-
+# If you find it useful, please give it a Star.
 # ONNXOCR
 #### Universal OCR, supporting inference in over 80 languages.
 Version Update
