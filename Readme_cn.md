@@ -36,6 +36,19 @@ PPOCRv4模型转onnx模型推理，精度和性能更高，推理速度比使用
 ![Alt text](result_img/draw_ocr5.jpg)
 
 ![Alt text](result_img/draw_ocr.jpg)
+##
+##
+##
+### 最近在求一份工作，或者您有什么建议可以加我的微信
+
+![alt text](onnxocr/test_images/myQR.jpg)
+
+#### OnnxOCR交流群
+##### 微信群
+![alt text](onnxocr/test_images/微信群.jpg)
+
+##### QQ群
+![alt text](onnxocr/test_images/QQ群.jpg)
 
 #### 感谢PaddleOcr
 

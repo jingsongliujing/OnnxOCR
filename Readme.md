@@ -27,6 +27,13 @@ Effect Display
 ![Alt text](result_img/draw_ocr.jpg)
 
 
+## WeChat Communication Group
+![alt text](onnxocr/test_images/微信群.jpg)
+
+## QQ Communication Group
+
+![alt text](onnxocr/test_images/QQ群.jpg)
+
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=jingsongliujing/OnnxOCR&type=Date)](https://star-history.com/#jingsongliujing/OnnxOCR&Date)
