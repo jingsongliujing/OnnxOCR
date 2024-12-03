@@ -1,8 +1,8 @@
 import time
 
-from onnxocr.predict_system import TextSystem
-from onnxocr.utils import infer_args as init_args
-from onnxocr.utils import str2bool, draw_ocr
+from .predict_system import TextSystem
+from .utils import infer_args as init_args
+from .utils import str2bool, draw_ocr
 import argparse
 import sys
 
@@ -15,7 +15,6 @@ class ONNXPaddleOcr(TextSystem):
         for action in parser._actions:
             inference_args_dict[action.dest] = action.default
         params = argparse.Namespace(**inference_args_dict)
-        
 
         # params.rec_image_shape = "3, 32, 320"
         params.rec_image_shape = "3, 48, 320"
@@ -28,7 +27,9 @@ class ONNXPaddleOcr(TextSystem):
 
     def ocr(self, img, det=True, rec=True, cls=True):
         if cls == True and self.use_angle_cls == False:
-            print('Since the angle classifier is not initialized, the angle classifier will not be uesd during the forward process')
+            print(
+                "Since the angle classifier is not initialized, the angle classifier will not be uesd during the forward process"
+            )
 
         if det and rec:
             ocr_res = []
@@ -63,6 +64,7 @@ class ONNXPaddleOcr(TextSystem):
 def sav2Img(org_img, result, name="draw_ocr.jpg"):
     # 显示结果
     from PIL import Image
+
     result = result[0]
     # image = Image.open(img_path).convert('RGB')
     # 图像转BGR2RGB
@@ -75,13 +77,14 @@ def sav2Img(org_img, result, name="draw_ocr.jpg"):
     im_show.save(name)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import cv2
 
     model = ONNXPaddleOcr(use_angle_cls=True, use_gpu=False)
 
-
-    img = cv2.imread('/data2/liujingsong3/fiber_box/test/img/20230531230052008263304.jpg')
+    img = cv2.imread(
+        "/data2/liujingsong3/fiber_box/test/img/20230531230052008263304.jpg"
+    )
     s = time.time()
     result = model.ocr(img)
     e = time.time()
