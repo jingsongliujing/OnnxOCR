@@ -6,9 +6,13 @@ from PIL import Image, ImageDraw, ImageFont
 from pathlib import Path
 import os
 
-workdir = os.getenv("ONNXOCR_WORKDIR", Path(__file__).resolve().parent)
-models_dir = os.getenv("ONNXOCR_MODELS_DIR", os.path.join(workdir, "models"))
-font_path = os.getenv("ONNXOCR_FONT_PATH", os.path.join(workdir, "fonts/simfang.ttf"))
+workdir = os.getenv("ONNXOCR_WORKDIR", os.path.abspath(os.path.dirname(__file__)))
+models_dir = os.getenv(
+    "ONNXOCR_MODELS_DIR", os.path.abspath(os.path.join(workdir, "models"))
+)
+font_path = os.getenv(
+    "ONNXOCR_FONT_PATH", os.path.abspath(os.path.join(workdir, "fonts/simfang.ttf"))
+)
 
 
 def get_rotate_crop_image(img, points):
