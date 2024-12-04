@@ -4,9 +4,11 @@ import argparse
 import math
 from PIL import Image, ImageDraw, ImageFont
 from pathlib import Path
+import os
 
-# 获取当前文件所在的目录
-module_dir = Path(__file__).resolve().parent
+workdir = os.getenv("ONNXOCR_WORKDIR", Path(__file__).resolve().parent)
+models_dir = os.getenv("ONNXOCR_MODELS_DIR", os.path.join(workdir, "models"))
+font_path = os.getenv("ONNXOCR_FONT_PATH", os.path.join(workdir, "fonts/simfang.ttf"))
 
 
 def get_rotate_crop_image(img, points):
@@ -119,7 +121,7 @@ def text_visual(
     img_h=400,
     img_w=600,
     threshold=0.0,
-    font_path=str(module_dir / "fonts/simfang.ttf"),
+    font_path=font_path,
 ):
     """
     create new blank img and draw txt on it
@@ -198,7 +200,7 @@ def draw_ocr(
     txts=None,
     scores=None,
     drop_score=0.5,
-    font_path=str(module_dir / "fonts/simfang.ttf"),
+    font_path=font_path,
 ):
     """
     Visualize the results of OCR detection and recognition
@@ -268,7 +270,7 @@ def infer_args():
     parser.add_argument(
         "--det_model_dir",
         type=str,
-        default=str(module_dir / "models/ppocrv4/det/det.onnx"),
+        default=os.path.join(models_dir, "ppocrv4/det/det.onnx"),
     )
     parser.add_argument("--det_limit_side_len", type=float, default=960)
     parser.add_argument("--det_limit_type", type=str, default="max")
@@ -308,7 +310,7 @@ def infer_args():
     parser.add_argument(
         "--rec_model_dir",
         type=str,
-        default=str(module_dir / "models/ppocrv4/rec/rec.onnx"),
+        default=os.path.join(models_dir, "ppocrv4/rec/rec.onnx"),
     )
     parser.add_argument("--rec_image_inverse", type=str2bool, default=True)
     parser.add_argument("--rec_image_shape", type=str, default="3, 48, 320")
@@ -317,12 +319,10 @@ def infer_args():
     parser.add_argument(
         "--rec_char_dict_path",
         type=str,
-        default=str(module_dir / "models/ch_ppocr_server_v2.0/ppocr_keys_v1.txt"),
+        default=os.path.join(models_dir, "ch_ppocr_server_v2.0/ppocr_keys_v1.txt"),
     )
     parser.add_argument("--use_space_char", type=str2bool, default=True)
-    parser.add_argument(
-        "--vis_font_path", type=str, default=str(module_dir / "fonts/simfang.ttf")
-    )
+    parser.add_argument("--vis_font_path", type=str, default=font_path)
     parser.add_argument("--drop_score", type=float, default=0.5)
 
     # params for e2e
@@ -336,7 +336,7 @@ def infer_args():
     parser.add_argument(
         "--e2e_char_dict_path",
         type=str,
-        default=str(module_dir / "ppocr/utils/ic15_dict.txt"),
+        default=os.path.join(models_dir, "ppocr/utils/ic15_dict.txt"),
     )
     parser.add_argument("--e2e_pgnet_valid_set", type=str, default="totaltext")
     parser.add_argument("--e2e_pgnet_mode", type=str, default="fast")
@@ -346,7 +346,7 @@ def infer_args():
     parser.add_argument(
         "--cls_model_dir",
         type=str,
-        default=str(module_dir / "models/ppocrv4/cls/cls.onnx"),
+        default=os.path.join(models_dir, "ppocrv4/cls/cls.onnx"),
     )
     parser.add_argument("--cls_image_shape", type=str, default="3, 48, 192")
     parser.add_argument("--label_list", type=list, default=["0", "180"])
@@ -365,11 +365,15 @@ def infer_args():
 
     #
     parser.add_argument(
-        "--draw_img_save_dir", type=str, default=str(module_dir / "inference_results")
+        "--draw_img_save_dir",
+        type=str,
+        default=os.path.join(workdir, "inference_results"),
     )
     parser.add_argument("--save_crop_res", type=str2bool, default=False)
     parser.add_argument(
-        "--crop_res_save_dir", type=str, default=str(module_dir / "output")
+        "--crop_res_save_dir",
+        type=str,
+        default=os.path.join(workdir, "output"),
     )
 
     # multi-process
@@ -379,7 +383,7 @@ def infer_args():
 
     parser.add_argument("--benchmark", type=str2bool, default=False)
     parser.add_argument(
-        "--save_log_path", type=str, default=str(module_dir / "log_output/")
+        "--save_log_path", type=str, default=os.path.join(workdir, "log_output/")
     )
 
     parser.add_argument("--show_log", type=str2bool, default=True)
