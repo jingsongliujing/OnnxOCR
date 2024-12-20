@@ -27,12 +27,34 @@ Effect Display
 ![Alt text](result_img/draw_ocr.jpg)
 
 
-## WeChat Communication Group
-![alt text](onnxocr/test_images/微信群.jpg)
 
-## QQ Communication Group
 
-![alt text](onnxocr/test_images/QQ群.jpg)
+<div style="display: flex; justify-content: center; align-items: center;">
+    <figure style="margin: 0 10px;">
+        <img src="onnxocr/test_images/32e0869f54edcf90cc8e93b981f7235.jpg" width="200" />
+        <figcaption style="text-align: center;">我的微信</figcaption>
+    </figure>
+    <figure style="margin: 0 10px;">
+        <img src="onnxocr/test_images/QQ群.jpg" width="200" />
+        <figcaption style="text-align: center;">QQ群</figcaption>
+    </figure>
+</div>
+
+
+## 写在最后
+我喜欢开源，喜欢AI技术，因为我认为开源和AI会为有需要的人带来方便和帮助，也会让这个世界变得更好。通过对这些项目的捐赠，您可以和我一道让AI为更多人带来温暖和美好。
+
+I like open source and AI technology because I think open source and AI will bring convenience and help to people in need, and will also make the world a better place. By donating to these projects, you can join me in making AI bring warmth and beauty to more people.
+
+支付宝或微信打赏 (Alipay reward or WeChat reward)¶
+通过支付宝或者微信给作者打赏，请写好备注。 Give the me a reward through Alipay or WeChat.
+<!-- ![alt text](onnxocr/test_images/weixin_pay.jpg)
+![alt text](onnxocr/test_images/zhifubao_pay.jpg) -->
+
+<center class="half">
+<img src="onnxocr/test_images/weixin_pay.jpg" width="200"/>
+<img src="onnxocr/test_images/zhifubao_pay.jpg" width="200"/>
+</center>
 
 ## Star History
 
