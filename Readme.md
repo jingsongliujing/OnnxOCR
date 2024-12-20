@@ -51,10 +51,19 @@ I like open source and AI technology because I think open source and AI will bri
 <!-- ![alt text](onnxocr/test_images/weixin_pay.jpg)
 ![alt text](onnxocr/test_images/zhifubao_pay.jpg) -->
 
-<center class="half">
-<img src="onnxocr/test_images/weixin_pay.jpg" width="200"/>
-<img src="onnxocr/test_images/zhifubao_pay.jpg" width="200"/>
-</center>
+
+
+
+<div style="display: flex; justify-content: center; align-items: center;">
+    <figure style="margin: 0 10px;">
+        <img src="onnxocr/test_images/weixin_pay.jpg" width="200" />
+        <figcaption style="text-align: center;">微信码</figcaption>
+    </figure>
+    <figure style="margin: 0 10px;">
+        <img src="onnxocr/test_images/zhifubao_pay.jpg" width="200" />
+        <figcaption style="text-align: center;">支付宝码</figcaption>
+    </figure>
+</div>
 
 ## Star History
 
