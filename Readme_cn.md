@@ -124,6 +124,19 @@ url: ip:5006/ocr
 https://github.com/PaddlePaddle/PaddleOCR
 
 
+## 写在最后
+我喜欢开源，喜欢AI技术，因为我认为开源和AI会为有需要的人带来方便和帮助，也会让这个世界变得更好。通过对这些项目的捐赠，您可以和我一道让AI为更多人带来温暖和美好。
+
+I like open source and AI technology because I think open source and AI will bring convenience and help to people in need, and will also make the world a better place. By donating to these projects, you can join me in making AI bring warmth and beauty to more people.
+
+支付宝或微信打赏 (Alipay reward or WeChat reward)¶
+通过支付宝或者微信给作者打赏，请写好备注。 Give the me a reward through Alipay or WeChat.
+<!-- ![alt text](onnxocr/test_images/weixin_pay.jpg)
+![alt text](onnxocr/test_images/zhifubao_pay.jpg) -->
+
+[<img src="https://api.gitsponsors.com/api/badge/img?id=664003098" height="20">](https://api.gitsponsors.com/api/badge/link?p=psyU8QKLdPFIXL5mH9zMD5f++sEFsfnj6S1e2jvW+rVZjLsjCjHKQZBx0sEMQRA6az1GD0RY96VIlYQe88Eh1m9JXD+DpwuEXofDdurIxtXV5RMWtC6f43LFroZNrb/+VqnPgrrt6KxFixzBxAPqJw==)
+
+
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=jingsongliujing/OnnxOCR&type=Date)](https://star-history.com/#jingsongliujing/OnnxOCR&Date)
