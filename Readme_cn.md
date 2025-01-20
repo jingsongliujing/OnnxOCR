@@ -1,3 +1,4 @@
+# [<img src="https://api.gitsponsors.com/api/badge/img?id=664003098" height="40">](https://api.gitsponsors.com/api/badge/link?p=psyU8QKLdPFIXL5mH9zMD5f++sEFsfnj6S1e2jvW+rVZjLsjCjHKQZBx0sEMQRA6az1GD0RY96VIlYQe88Eh1m9JXD+DpwuEXofDdurIxtXV5RMWtC6f43LFroZNrb/+VqnPgrrt6KxFixzBxAPqJw==)
 # 如果项目对您有帮助，麻烦右上角点个Star呗
 # OnnxOCR
 
@@ -134,7 +135,7 @@ I like open source and AI technology because I think open source and AI will bri
 <!-- ![alt text](onnxocr/test_images/weixin_pay.jpg)
 ![alt text](onnxocr/test_images/zhifubao_pay.jpg) -->
 
-[<img src="https://api.gitsponsors.com/api/badge/img?id=664003098" height="20">](https://api.gitsponsors.com/api/badge/link?p=psyU8QKLdPFIXL5mH9zMD5f++sEFsfnj6S1e2jvW+rVZjLsjCjHKQZBx0sEMQRA6az1GD0RY96VIlYQe88Eh1m9JXD+DpwuEXofDdurIxtXV5RMWtC6f43LFroZNrb/+VqnPgrrt6KxFixzBxAPqJw==)
+
 
 
 ## Star History
