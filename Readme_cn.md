@@ -1,4 +1,4 @@
-# [<img src="https://api.gitsponsors.com/api/badge/img?id=664003098" height="40">](https://api.gitsponsors.com/api/badge/link?p=psyU8QKLdPFIXL5mH9zMDyUyKCplzzjvGZmQGR1EP9XqeHTfZABshV11OQc8amwRrwoxzfcv9Jcx1B8EWgq5uTEi2GFhOBFpaDZvz5ehFbToQ6aUVXmMIB/FYGxKyPGq)
+# [<img src="https://api.gitsponsors.com/api/badge/img?id=664003098" height="40">](https://api.gitsponsors.com/api/badge/link?p=psyU8QKLdPFIXL5mH9zMDyUyKCplzzjvGZmQGR1EP9XqeHTfZABshV11OQc8amwRrwoxzfcv9Jcx1B8EWgq5uTEi2GFhOBFpaDZvz5ehFbT4NTKnREOPdemaGeuSg+vUmNxlGcucvAUtn4AByFmHyQ==)
 # 如果项目对您有帮助，麻烦右上角点个Star呗
 # OnnxOCR
 
