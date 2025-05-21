@@ -2,7 +2,9 @@
 # onnxOCR
 
 #### 版本更新
-PPOCRv4模型转onnx模型推理，精度和性能更高，推理速度比使用paddlepaddle框架快5倍
+2025.05.21  新增ppocrv5模型，目前还有一些工程进行中，使用请切换ppocrv5分支:[ppocrv5分支](https://github.com/jingsongliujing/OnnxOCR/tree/ppocrv5)
+
+2024.11.11  PPOCRv4模型转onnx模型推理，精度和性能更高，推理速度比使用paddlepaddle框架快5倍
 
 ####   一.优势：
 1.脱离深度学习训练框架，可直接用于部署的通用OCR。
