@@ -1,3 +1,4 @@
+# [<img src="https://api.gitsponsors.com/api/badge/img?id=664003098" height="20">](https://api.gitsponsors.com/api/badge/link?p=psyU8QKLdPFIXL5mH9zMDyUyKCplzzjvGZmQGR1EP9XqeHTfZABshV11OQc8amwRrwoxzfcv9Jcx1B8EWgq5uTEi2GFhOBFpaDZvz5ehFbT4NTKnREOPdemaGeuSg+vUmNxlGcucvAUtn4AByFmHyQ==)
 English | [简体中文](./Readme_cn.md) |
 # If you find it useful, please give it a Star.
 # ONNXOCR
@@ -6,9 +7,9 @@ Version Update
 The PPOCRv4 model converted to an ONNX model for inference achieves higher accuracy and performance, with the inference speed being 5 times faster than using the PaddlePaddle framework.
 
 Advantages:
-1.Independent from deep learning training frameworks, it is a general OCR that can be directly deployed.
-2.In situations where computational power is limited and accuracy remains unchanged, the PaddleOCR is converted into an ONNX model, which has been 3.reconstructed as an OCR model that can be deployed on computers with ARM architecture and x86 architecture.
-4.On computers with equivalent performance, the inference speed has been accelerated by 4-5 times.
+1. Independent from deep learning training frameworks, it is a general OCR that can be directly deployed.
+2. In situations where computational power is limited and accuracy remains unchanged, the PaddleOCR is converted into an ONNX model, which has been reconstructed as an OCR model that can be deployed on computers with ARM architecture and x86 architecture.
+4. On computers with equivalent performance, the inference speed has been accelerated by 4-5 times.
 
 
 Effect Display
@@ -49,6 +50,9 @@ I like open source and AI technology because I think open source and AI will bri
 通过支付宝或者微信给作者打赏，请写好备注。 Give the me a reward through Alipay or WeChat.
 <!-- ![alt text](onnxocr/test_images/weixin_pay.jpg)
 ![alt text](onnxocr/test_images/zhifubao_pay.jpg) -->
+
+
+
 
 
 
