@@ -268,7 +268,7 @@ def infer_args():
     parser.add_argument(
         "--det_model_dir",
         type=str,
-        default=str(module_dir / "models/ppocrv4/det/det.onnx"),
+        default=str(module_dir / "models/ppocrv5/det/det.onnx"),
     )
     parser.add_argument("--det_limit_side_len", type=float, default=960)
     parser.add_argument("--det_limit_type", type=str, default="max")
@@ -308,7 +308,7 @@ def infer_args():
     parser.add_argument(
         "--rec_model_dir",
         type=str,
-        default=str(module_dir / "models/ppocrv4/rec/rec.onnx"),
+        default=str(module_dir / "models/ppocrv5/rec/rec.onnx"),
     )
     parser.add_argument("--rec_image_inverse", type=str2bool, default=True)
     parser.add_argument("--rec_image_shape", type=str, default="3, 48, 320")
@@ -317,7 +317,7 @@ def infer_args():
     parser.add_argument(
         "--rec_char_dict_path",
         type=str,
-        default=str(module_dir / "models/ch_ppocr_server_v2.0/ppocr_keys_v1.txt"),
+        default=str(module_dir / "models/ppocrv5/ppocrv5_dict.txt"),
     )
     parser.add_argument("--use_space_char", type=str2bool, default=True)
     parser.add_argument(
