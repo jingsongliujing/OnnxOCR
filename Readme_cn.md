@@ -1,5 +1,6 @@
+# [<img src="https://api.gitsponsors.com/api/badge/img?id=664003098" height="20">](https://api.gitsponsors.com/api/badge/link?p=psyU8QKLdPFIXL5mH9zMDyUyKCplzzjvGZmQGR1EP9XqeHTfZABshV11OQc8amwRrwoxzfcv9Jcx1B8EWgq5uTEi2GFhOBFpaDZvz5ehFbT4NTKnREOPdemaGeuSg+vUmNxlGcucvAUtn4AByFmHyQ==)
 # 如果项目对您有帮助，麻烦右上角点个Star呗
-# onnxOCR
+# OnnxOCR
 
 #### 版本更新
 2025.05.21  新增ppocrv5模型，目前还有一些工程进行中，使用请切换ppocrv5分支:[ppocrv5分支](https://github.com/jingsongliujing/OnnxOCR/tree/ppocrv5)
@@ -24,6 +25,75 @@
 #### 三.一键运行
 
     python test_ocr.py
+
+#### 四.API Service(cpu示例)
+运行服务示例：
+
+```
+python app-service.py
+```
+#### 测试示例：
+##### 请求：
+
+```
+curl -X POST http://localhost:5005/ocr \
+-H "Content-Type: application/json" \
+-d '{"image": "base64_encoded_image_data"}'
+```
+
+##### 响应：
+
+```
+{
+  "processing_time": 0.456,
+  "results": [
+    {
+      "text": "名称",
+      "confidence": 0.9999361634254456,
+      "bounding_box": [[4.0, 8.0], [31.0, 8.0], [31.0, 24.0], [4.0, 24.0]]
+    },
+    {
+      "text": "标头",
+      "confidence": 0.9998759031295776,
+      "bounding_box": [[233.0, 7.0], [258.0, 7.0], [258.0, 23.0], [233.0, 23.0]]
+    }
+  ]
+}
+```
+
+#### 五.docker镜像环境（cpu）[GPU版本的待更新]
+##### 镜像构建：
+```
+docker build -t ocr-service .
+```
+##### 镜像启动：
+```
+docker run -itd --name onnxocr-service-v3 -p 5006:5005 onnxocr-service:v3
+```
+
+##### post请求：
+```
+url: ip:5006/ocr
+```
+
+##### 返回值示例：
+```
+{
+  "processing_time": 0.456,
+  "results": [
+    {
+      "text": "名称",
+      "confidence": 0.9999361634254456,
+      "bounding_box": [[4.0, 8.0], [31.0, 8.0], [31.0, 24.0], [4.0, 24.0]]
+    },
+    {
+      "text": "标头",
+      "confidence": 0.9998759031295776,
+      "bounding_box": [[233.0, 7.0], [258.0, 7.0], [258.0, 23.0], [233.0, 23.0]]
+    }
+  ]
+}
+```
 
 #### 效果展示
 
@@ -55,6 +125,19 @@
 #### 感谢PaddleOcr
 
 https://github.com/PaddlePaddle/PaddleOCR
+
+
+## 写在最后
+我喜欢开源，喜欢AI技术，因为我认为开源和AI会为有需要的人带来方便和帮助，也会让这个世界变得更好。通过对这些项目的捐赠，您可以和我一道让AI为更多人带来温暖和美好。
+
+I like open source and AI technology because I think open source and AI will bring convenience and help to people in need, and will also make the world a better place. By donating to these projects, you can join me in making AI bring warmth and beauty to more people.
+
+支付宝或微信打赏 (Alipay reward or WeChat reward)¶
+通过支付宝或者微信给作者打赏，请写好备注。 Give the me a reward through Alipay or WeChat.
+<!-- ![alt text](onnxocr/test_images/weixin_pay.jpg)
+![alt text](onnxocr/test_images/zhifubao_pay.jpg) -->
+
+
 
 
 ## Star History
