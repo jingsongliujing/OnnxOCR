@@ -1,5 +1,5 @@
 
-
+English | [简体中文](./Readme_cn.md) |
 
 ### **OnnxOCR**  
 ### ![onnx_logo](onnxocr/test_images/onnxocr_logo.png)  
