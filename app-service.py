@@ -2,8 +2,8 @@ import cv2
 import time
 import base64
 import numpy as np
-from flask import Flask, request, jsonify
-from onnxocr.onnx_paddleocr import ONNXPaddleOcr, sav2Img
+from flask import Flask, request, jsonify,render_template
+from onnxocr.onnx_paddleocr import ONNXPaddleOcr
 
 # 初始化 Flask 应用
 app = Flask(__name__)
@@ -11,6 +11,9 @@ app = Flask(__name__)
 # 初始化 OCR 模型
 model = ONNXPaddleOcr(use_angle_cls=True, use_gpu=False)
 
+@app.route('/')
+def index():
+    return render_template('index.html')
 
 @app.route('/ocr', methods=['POST'])
 def ocr_service():
@@ -36,10 +39,6 @@ def ocr_service():
         result = model.ocr(img)
         end_time = time.time()
         processing_time = end_time - start_time
-
-        # 保存结果图像（可选）
-        # sav2Img(img, result)
-        # print(result)
 
         # 格式化结果
         ocr_results = []

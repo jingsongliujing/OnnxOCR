@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <title>OCR</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body, html {
+            height: 100%;
+            font-family: sans-serif;
+            background-color: #ffffff;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 5px 20px 20px 20px;
+        }
+
+        .drop-zone {
+            border: 2px dashed #888;
+            border-radius: 10px;
+            width: 400px;
+            height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: #555;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-bottom: 20px;
+        }
+
+        .drop-zone.dragover {
+            background-color: #f0f0f0;
+        }
+
+        .canvas-container {
+            display: none;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        canvas {
+            border: 1px solid #ccc;
+            max-width: 600px;
+            height: auto;
+        }
+
+        /* 加载动画 */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            display: none;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #ccc;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>OCR</h2>
+    <div id="dropZone" class="drop-zone">
+        点击或拖动图片到这里上传
+    </div>
+
+    <!-- 加载动画 -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- 结果区域 -->
+    <div id="canvasContainer" class="canvas-container">
+        <canvas id="canvasOriginal"></canvas>
+        <canvas id="canvasTextOnly"></canvas>
+    </div>
+</div>
+
+<script>
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+
+    const MAX_DISPLAY_WIDTH = 500;
+
+    const canvasOriginal = document.getElementById('canvasOriginal');
+    const ctxOriginal = canvasOriginal.getContext('2d');
+
+    const canvasTextOnly = document.getElementById('canvasTextOnly');
+    const ctxTextOnly = canvasTextOnly.getContext('2d');
+
+    const canvasContainer = document.getElementById('canvasContainer');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+
+    // 点击上传
+    dropZone.addEventListener('click', () => {
+        fileInput.click();
+    });
+
+    // 拖拽上传
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) {
+            handleImage(file);
+        } else {
+            alert("请上传图片文件");
+        }
+    });
+
+    fileInput.addEventListener('change', () => {
+        const file = fileInput.files[0];
+        if (file) {
+            handleImage(file);
+        }
+    });
+
+    function handleImage(file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const img = new Image();
+            img.onload = function () {
+                const scale = MAX_DISPLAY_WIDTH / img.width;
+                const displayWidth = img.width * scale;
+                const displayHeight = img.height * scale;
+
+                // 设置 canvas 尺寸
+                canvasOriginal.width = displayWidth;
+                canvasOriginal.height = displayHeight;
+                canvasTextOnly.width = displayWidth;
+                canvasTextOnly.height = displayHeight;
+
+                // 清除之前的绘图
+                ctxOriginal.clearRect(0, 0, displayWidth, displayHeight);
+                ctxTextOnly.clearRect(0, 0, displayWidth, displayHeight);
+
+                // 绘制原始图像
+                ctxOriginal.drawImage(img, 0, 0, displayWidth, displayHeight);
+
+                // 显示 canvas 容器
+                canvasContainer.style.display = "flex";
+
+                // 显示加载动画
+                loadingOverlay.style.display = "flex";
+
+                const base64Image = e.target.result.split(',')[1];
+                sendToOCR(base64Image, img.width, img.height, displayWidth, displayHeight);
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function sendToOCR(base64Image, originalWidth, originalHeight, displayWidth, displayHeight) {
+        fetch('/ocr', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ image: base64Image })
+        })
+            .then(res => res.json())
+            .then(data => {
+                drawBoxesAndTextWithOrientation(data.results, originalWidth, originalHeight, displayWidth, displayHeight);
+                // 隐藏加载动画
+                loadingOverlay.style.display = "none";
+            })
+            .catch(err => {
+                console.error("OCR 调用失败", err);
+                alert("OCR 识别失败，请查看控制台日志");
+                loadingOverlay.style.display = "none";
+            });
+    }
+
+    function drawBoxesAndTextWithOrientation(results, originalWidth, originalHeight, displayWidth, displayHeight) {
+        ctxTextOnly.clearRect(0, 0, canvasTextOnly.width, canvasTextOnly.height);
+        ctxTextOnly.font = "12px sans-serif";
+        ctxTextOnly.fillStyle = "black";
+
+        const scaleX = displayWidth / originalWidth;
+        const scaleY = displayHeight / originalHeight;
+
+        results.forEach(result => {
+            const box = result.bounding_box.map(([x, y]) => [
+                x * scaleX,
+                y * scaleY
+            ]);
+
+            const [[x1, y1], [x2, y2], [x3, y3]] = box;
+
+            const width = Math.abs(x2 - x1);
+            const height = Math.abs(y3 - y1);
+
+            const decodedText = decodeUnicode(result.text);
+
+            // 判断方向：宽 < 高 → 竖排
+            if (width < height && height > 10) {
+                drawVerticalText(ctxTextOnly, decodedText, x1, y1, height);
+            } else {
+                ctxTextOnly.fillText(decodedText, x1, y1 + height / 2);
+            }
+
+            // 绘制左侧红色框
+            ctxOriginal.strokeStyle = "red";
+            ctxOriginal.lineWidth = 1;
+            ctxOriginal.strokeRect(x1, y1, width, height);
+        });
+    }
+
+    // 竖排文字绘制函数
+    function drawVerticalText(ctx, text, x, y, height) {
+        for (let i = 0; i < text.length; i++) {
+            ctx.fillText(text[i], x, y + i * 14);
+        }
+    }
+
+    // Unicode 解码函数
+    function decodeUnicode(str) {
+        return str.replace(/\\u([0-9a-fA-F]{4})/g, function (_, hex) {
+            return String.fromCharCode(parseInt(hex, 16));
+        });
+    }
+</script>
+
+</body>
+</html>
