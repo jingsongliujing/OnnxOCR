@@ -10,3 +10,4 @@ scikit-image
 imgaug
 lmdb
 tqdm
+numpy==1.26.4
