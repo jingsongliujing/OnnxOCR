@@ -1,0 +1,313 @@
+body {
+    font-family: 'Segoe UI', 'Microsoft YaHei', Arial, sans-serif;
+    background: linear-gradient(135deg, #e0e7ff 0%, #f8fafc 100%);
+    margin: 0;
+    min-height: 100vh;
+    width: 100vw;
+    box-sizing: border-box;
+}
+.container {
+    width: 90vw;
+    min-height: 80vh;
+    margin: 4vh auto 0 auto;
+    background: #fff;
+    border-radius: 22px;
+    box-shadow: 0 10px 40px #7b8cff22, 0 1.5px 8px #0001;
+    padding: 56px 0 40px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    max-width: 1100px;
+    transition: box-shadow 0.3s;
+}
+h2 {
+    text-align: center;
+    margin-bottom: 36px;
+    font-size: 2.5rem;
+    color: #2d3a4a;
+    letter-spacing: 2px;
+    font-weight: 700;
+    text-shadow: 0 2px 8px #7b8cff22;
+}
+.form-row {
+    margin-bottom: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+.form-row label {
+    margin-right: 12px;
+    font-weight: 500;
+    color: #3b4252;
+}
+#fileInput {
+    display: none;
+}
+.drop-zone {
+    border: 2.5px dashed #7b8cff;
+    border-radius: 14px;
+    padding: 48px 0;
+    text-align: center;
+    color: #5a5a5a;
+    background: #f4f7ff;
+    cursor: pointer;
+    margin-bottom: 20px;
+    font-size: 1.15rem;
+    transition: background 0.2s, border-color 0.2s;
+    width: 96%;
+    min-width: 320px;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 120px;
+    box-sizing: border-box;
+    box-shadow: 0 2px 12px #7b8cff11;
+}
+.drop-zone.dragover {
+    background: #e0eaff;
+    border-color: #3b82f6;
+}
+#resultArea {
+    margin-top: 32px;
+    width: 90%;
+    max-width: 900px;
+}
+.download-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+    width: 90%;
+    max-width: 900px;
+}
+.result-block, #previewArea {
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+}
+.ocr-image-preview {
+    max-width: 320px;
+    max-height: 220px;
+    border-radius: 8px;
+    box-shadow: 0 1px 8px #0002;
+    background: #fff;
+    margin-right: 8px;
+}
+.ocr-text-content {
+    flex: 1;
+    min-width: 0;
+    max-height: 220px;
+    overflow-y: auto;
+    background: #f7faff;
+    border-radius: 8px;
+    padding: 12px 16px;
+    box-sizing: border-box;
+    box-shadow: 0 1px 4px #0001;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+.copy-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px;
+    margin-left: 8px;
+    border-radius: 4px;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+}
+.copy-btn:hover {
+    background: #e0eaff;
+}
+.copy-btn svg {
+    display: block;
+}
+.result-block {
+    background: #f7faff;
+    border-radius: 8px;
+    padding: 0;
+    margin-bottom: 14px;
+    border-left: 4px solid #7b8cff;
+    box-shadow: 0 1px 4px #0001;
+}
+.ocr-text-content pre {
+    white-space: pre-wrap;
+    word-break: break-all;
+    font-size: 1.01rem;
+    color: #2d3a4a;
+    margin: 0;
+}
+#downloadBtn {
+    margin-top: 22px;
+    display: none;
+    background: linear-gradient(90deg, #7b8cff 0%, #3b82f6 100%);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 28px;
+    font-size: 1.08rem;
+    cursor: pointer;
+    box-shadow: 0 2px 8px #7b8cff22;
+    transition: background 0.2s;
+}
+#downloadBtn:hover {
+    background: linear-gradient(90deg, #3b82f6 0%, #7b8cff 100%);
+}
+#loading {
+    display: none;
+    text-align: center;
+    margin-top: 20px;
+    color: #3b82f6;
+    font-size: 1.1rem;
+}
+#fileList {
+    margin: 0;
+    padding: 0 0 0 20px;
+    color: #444;
+    font-size: 15px;
+    min-height: 24px;
+}
+#clearBtn {
+    margin-left: 18px;
+    background: #f3f4f6;
+    color: #3b4252;
+    border: 1.5px solid #d1d5db;
+    border-radius: 6px;
+    padding: 7px 18px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+#clearBtn:hover {
+    background: #e0eaff;
+    border-color: #7b8cff;
+}
+button[type="submit"] {
+    background: linear-gradient(90deg, #7b8cff 0%, #3b82f6 100%);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 32px;
+    font-size: 1.08rem;
+    cursor: pointer;
+    box-shadow: 0 2px 8px #7b8cff22;
+    transition: background 0.2s;
+    display: block;
+    margin: 0 auto;
+}
+button[type="submit"]:hover {
+    background: linear-gradient(90deg, #3b82f6 0%, #7b8cff 100%);
+}
+select {
+    border-radius: 6px;
+    border: 1.5px solid #d1d5db;
+    padding: 7px 16px;
+    font-size: 1rem;
+    background: #f9fafb;
+    color: #2d3a4a;
+    outline: none;
+    transition: border-color 0.2s;
+}
+select:focus {
+    border-color: #7b8cff;
+}
+#progressArea {
+    width: 80%;
+    margin: 32px 0 0 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+.progress-bar-bg {
+    width: 80%;
+    height: 16px;
+    background: #e0eaff;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 4px;
+}
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #7b8cff 0%, #3b82f6 100%);
+    border-radius: 8px;
+    width: 0%;
+    transition: width 0.3s;
+}
+#progressText {
+    color: #3b4252;
+    font-size: 1rem;
+    margin-bottom: 2px;
+}
+#elapsedTime {
+    color: #888;
+    font-size: 0.98rem;
+    margin-top: 2px;
+}
+@media (max-width: 900px) {
+    .container {
+        width: 98vw;
+        min-height: 90vh;
+        padding: 18px 0 18px 0;
+        border-radius: 0;
+        box-shadow: none;
+    }
+    .drop-zone {
+        width: 96vw;
+        min-width: 0;
+        max-width: 100vw;
+    }
+}
+@media (max-width: 600px) {
+    .container {
+        width: 100vw;
+        min-height: 100vh;
+        padding: 0;
+        border-radius: 0;
+        box-shadow: none;
+    }
+    h2 {
+        font-size: 1.3rem;
+    }
+    .form-row {
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+    }
+    .form-row label {
+        margin-bottom: 6px;
+    }
+    .drop-zone {
+        width: 98vw;
+        min-width: 0;
+        max-width: 100vw;
+        padding: 28px 0;
+        min-height: 60px;
+        font-size: 1rem;
+    }
+    #downloadBtn, button[type="submit"] {
+        width: 100%;
+        margin-left: 0;
+        margin-top: 10px;
+    }
+    #clearBtn {
+        width: 100%;
+        min-width: 0;
+        max-width: 100vw;
+        font-size: 0.98rem;
+        padding: 7px 10px;
+        margin-top: 10px;
+        margin-left: 0;
+        align-self: stretch;
+    }
+    #resultArea, .download-row {
+        width: 98vw;
+        max-width: 100vw;
+    }
+}
