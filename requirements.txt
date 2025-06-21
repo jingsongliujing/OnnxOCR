@@ -10,4 +10,6 @@ scikit-image
 imgaug
 lmdb
 tqdm
-numpy==1.26.4
+numpy<2.0.0
+pymupdf
+pdf2image
