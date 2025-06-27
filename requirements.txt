@@ -13,3 +13,5 @@ tqdm
 numpy<2.0.0
 pymupdf
 pdf2image
+customtkinter
+tkinterdnd2
