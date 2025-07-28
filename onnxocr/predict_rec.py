@@ -19,7 +19,7 @@ class TextRecognizer(PredictBase):
         )
 
         # 初始化模型
-        self.rec_onnx_session = self.get_onnx_session(args.rec_model_dir, args.use_gpu)
+        self.rec_onnx_session = self.get_onnx_session(args.rec_model_dir, args.use_gpu, gpu_id = args.gpu_id)
         self.rec_input_name = self.get_input_name(self.rec_onnx_session)
         self.rec_output_name = self.get_output_name(self.rec_onnx_session)
 
