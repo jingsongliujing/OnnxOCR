@@ -219,6 +219,7 @@ class OCRLogic:
         base_model_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "onnxocr", "models"))
         model_map = {
             "PP-OCRv5": "ppocrv5",
+            "PP-OCRv5_mobile": "ppocrv5_mobile",
             "PP-OCRv4": "ppocrv4",
             "ch_ppocr_server_v2.0": "ch_ppocr_server_v2.0"
         }

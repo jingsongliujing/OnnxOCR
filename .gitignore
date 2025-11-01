@@ -2,10 +2,14 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
+results/
+onnxocr/result_img/
+onnxocr/test_images/
+test_images/
+result_img/
 # C extensions
 *.so
-
+1*.jpg
 # Distribution / packaging
 .Python
 build/

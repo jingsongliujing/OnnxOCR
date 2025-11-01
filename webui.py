@@ -8,21 +8,26 @@ import cv2
 import base64
 import numpy as np
 from onnxocr.onnx_paddleocr import ONNXPaddleOcr
-
+#import torch 
+#to_fix_error=r'''
+#fix error:
+#2025-07-20 17:59:27.2458785 [E:onnxruntime:Default, provider_bridge_ort.cc:2195 onnxruntime::TryGetProviderInfo_CUDA] D:\a\_work\1\s\onnxruntime\core\session\provider_bridge_ort.cc:1778 onnxruntime::ProviderLibrary::Get [ONNXRuntimeError] : 1 : FAIL : Error loading "C:\Users\cnzya\AppData\Roaming\Python\Python313\site-packages\onnxruntime\capi\onnxruntime_")l" which depends on "cudnn64_9.dll" which is missing. (Error 126: "
+#2025-07-20 17:59:27.2559328 [W:onnxruntime:Default, onnxruntime_pybind_state.cc:1055 onnxruntime::python::CreateExecutionProviderInstance] Failed to create CUDAExecutionProvider. Require cuDNN 9.* and CUDA 12.*, and the latest MSVC runtime. Please install all dependencies as mentioned in the GPU requirements page (https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html#requirements), make sure they're in the PATH, and that your GPU is supported.
+#'''
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_ROOT = os.path.join(BASE_DIR, "uploads")
 RESULT_ROOT = os.path.join(BASE_DIR, "results")
 os.makedirs(UPLOAD_ROOT, exist_ok=True)
 os.makedirs(RESULT_ROOT, exist_ok=True)
 
-MODEL_OPTIONS = ["PP-OCRv5", "PP-OCRv4", "ch_ppocr_server_v2.0"]
+MODEL_OPTIONS = ["PP-OCRv5","PP-OCRv5_Server", "PP-OCRv4", "ch_ppocr_server_v2.0"]
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
 app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024  # 200MB
 
 ocr_logic = OCRLogic(lambda msg: print(msg))
 # 独立 OCR 模型实例，避免影响 ocr_logic
-ocr_model_api = ONNXPaddleOcr(use_angle_cls=True, use_gpu=False)
+ocr_model_api = ONNXPaddleOcr(use_angle_cls=True, use_gpu=True)
 
 @app.route("/")
 def index():
