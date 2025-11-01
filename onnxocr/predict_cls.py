@@ -15,7 +15,7 @@ class TextClassifier(PredictBase):
         self.postprocess_op = ClsPostProcess(label_list=args.label_list)
 
         # 初始化模型
-        self.cls_onnx_session = self.get_onnx_session(args.cls_model_dir, args.use_gpu)
+        self.cls_onnx_session = self.get_onnx_session(args.cls_model_dir, args.use_gpu, gpu_id = args.gpu_id)
         self.cls_input_name = self.get_input_name(self.cls_onnx_session)
         self.cls_output_name = self.get_output_name(self.cls_onnx_session)
 
