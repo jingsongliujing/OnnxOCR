@@ -79,6 +79,70 @@ curl -X POST http://localhost:5005/ocr \
 ```  
 
 
+## 🔧 二次开发接口说明（Extended APIs）
+
+以下接口在 `OnnxOCR/app-service.py` 中实现，默认端口 `5005`：
+
+### 新增 POST 接口
+- `POST /ocr_image`：请求体 JSON `{"image": "<base64>"}`，返回标注图片（image/png）
+- `POST /ocr_url`：请求体 JSON `{"url": "<http(s)图片地址>"}`，返回 OCR 结果 JSON
+- `POST /ocr_url_image`：请求体 JSON `{"url": "<http(s)图片地址>"}`，返回标注图片（image/png）
+
+示例：
+```bash
+curl -X POST http://localhost:5005/ocr_image \
+  -H "Content-Type: application/json" \
+  -d '{"image":"BASE64_DATA"}' --output result.png
+
+curl -X POST http://localhost:5005/ocr_url \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://example.com/img.jpg"}'
+
+curl -X POST http://localhost:5005/ocr_url_image \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://example.com/img.jpg"}' --output result.png
+```
+
+### 新增 GET 接口（URL 直链入参）
+- `GET /url=<path>`：返回 OCR 结果 JSON（支持翻译）
+- `GET /img=<path>`：返回图片（支持翻译后的渲染）
+
+说明：
+- 先调用 `GET /url=图片URL?key=<deepseek_key>` 将使用 DeepSeek 翻译并缓存结果；
+- 随后可直接调用 `GET /img=图片URL`，服务会使用缓存中的译文，将原图上的文字替换为译文（覆盖绘制，不再显示右侧面板/置信度）。
+
+示例：
+```bash
+# 1）获取 JSON 并触发 DeepSeek 翻译（带 key）
+http://127.0.0.1:5005/url=https://example.com/img.jpg?key=sk_xxx
+
+# 2）直接获取图片（不带 key，复用上一步缓存的译文）
+http://127.0.0.1:5005/img=https://example.com/img.jpg
+```
+
+### DeepSeek 翻译
+- 模型：`deepseek-chat`
+- 接口：`https://api.deepseek.com/chat/completions`
+- 传参：在 `GET /url=` 时通过 `key=sk_xxx` 传入 API Key 以启用翻译
+- 返回：JSON 中为每条结果新增 `text_translated`；图片接口会直接将译文覆盖在原文位置（自动换行/动态字号，必要时扩展覆盖区域保证不截断）
+
+### Prompt 配置
+DeepSeek 的提示词读取顺序（优先级）：
+1. URL 查询参数：`prompt=<本地文件路径>`
+2. 环境变量：`DEEPSEEK_PROMPT_PATH` 或 `PROMPT_PATH`
+3. 默认位置：项目根目录 `prompt.txt` 或 `OnnxOCR/prompt.txt`
+
+示例：
+```bash
+http://127.0.0.1:5005/url=https://example.com/img.jpg?key=sk_xxx&prompt=D:\\GitHub\\KOOK_OCR\\prompt.txt
+```
+
+### 其他说明
+- 中文绘制使用 PIL + `onnxocr/fonts/simfang.ttf`，避免中文乱码。
+- 若未先使用 `GET /url=` 触发翻译缓存，`GET /img=` 将回退为仅显示 OCR 框与文本的原逻辑（无翻译）。
+- 若需要自定义缓存策略（过期时间/持久化），可进一步扩展。
+
+
 ## 🐳 Docker 镜像环境（CPU）  
 ### 镜像构建  
 ```bash  

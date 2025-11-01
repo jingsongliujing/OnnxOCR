@@ -81,6 +81,70 @@ curl -X POST http://localhost:5005/ocr \
 ```  
 
 
+## 🔧 Extended APIs
+
+These endpoints are implemented in `OnnxOCR/app-service.py` (default port `5005`):
+
+### New POST endpoints
+- `POST /ocr_image`: body JSON `{"image": "<base64>"}`; returns annotated image (image/png)
+- `POST /ocr_url`: body JSON `{"url": "<http(s) image URL>"}`; returns OCR result JSON
+- `POST /ocr_url_image`: body JSON `{"url": "<http(s) image URL>"}`; returns annotated image (image/png)
+
+Examples:
+```bash
+curl -X POST http://localhost:5005/ocr_image \
+  -H "Content-Type: application/json" \
+  -d '{"image":"BASE64_DATA"}' --output result.png
+
+curl -X POST http://localhost:5005/ocr_url \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://example.com/img.jpg"}'
+
+curl -X POST http://localhost:5005/ocr_url_image \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://example.com/img.jpg"}' --output result.png
+```
+
+### New GET endpoints (URL path style)
+- `GET /url=<path>`: returns OCR JSON (translation supported)
+- `GET /img=<path>`: returns image (renders with translations when available)
+
+Notes:
+- First call `GET /url=<imageURL>?key=<deepseek_key>` to translate via DeepSeek and cache the result.
+- Then call `GET /img=<imageURL>`; the service uses cached translations to overwrite original text on the image (no sidebar/confidence).
+
+Examples:
+```bash
+# 1) Get JSON and trigger DeepSeek translation (with key)
+http://127.0.0.1:5005/url=https://example.com/img.jpg?key=sk_xxx
+
+# 2) Get image (without key; uses cached translations)
+http://127.0.0.1:5005/img=https://example.com/img.jpg
+```
+
+### DeepSeek translation
+- Model: `deepseek-chat`
+- Endpoint: `https://api.deepseek.com/chat/completions`
+- How to enable: provide API key via `GET /url=` query `key=sk_xxx`
+- Return: JSON adds `text_translated`; image endpoint overlays translations over original text (auto wrap/dynamic font size; expands overlay region when needed to avoid truncation)
+
+### Prompt configuration
+Prompt resolving priority:
+1. URL query param: `prompt=<local file path>`
+2. Environment variables: `DEEPSEEK_PROMPT_PATH` or `PROMPT_PATH`
+3. Fallback: project root `prompt.txt` or `OnnxOCR/prompt.txt`
+
+Example:
+```bash
+http://127.0.0.1:5005/url=https://example.com/img.jpg?key=sk_xxx&prompt=D:\\GitHub\\KOOK_OCR\\prompt.txt
+```
+
+### Additional notes
+- Rendering uses PIL + `onnxocr/fonts/simfang.ttf` to avoid garbled CJK characters.
+- If you don't call `GET /url=` first to warm the translation cache, `GET /img=` falls back to the plain OCR visualization (no translation).
+- Custom cache strategies (TTL/persistence) can be added if needed.
+
+
 ## 🐳 Docker Image Environment (CPU)  
 ### Build Image  
 ```bash  
