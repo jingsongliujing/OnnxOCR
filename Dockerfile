@@ -1,5 +1,5 @@
-# 使用 Python 3.7 作为基础镜像
-FROM python:3.7-slim
+# 使用 Python 3.10 作为基础镜像
+FROM python:3.10-slim
 
 # 设置工作目录
 WORKDIR /app
@@ -8,10 +8,8 @@ WORKDIR /app
 COPY requirements.txt .
 
 # 安装依赖
-RUN pip install --no-cache-dir -r requirements.txt -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
-RUN apt-get update
-RUN apt-get install ffmpeg libsm6 libxext6  -y
-RUN apt-get install libgl1
+RUN pip install --no-cache-dir -r requirements.txt
+RUN apt-get update && apt-get install -y ffmpeg libsm6 libxext6 libgl1 && rm -rf /var/lib/apt/lists/*
 
 # 复制项目目录中的所有文件到镜像中
 COPY . .
