@@ -4,6 +4,4 @@ services:
     container_name: onnxocr
     ports:
       - "5005:5005"
-    security_opt:
-      - seccomp:unconfined
     restart: unless-stopped
