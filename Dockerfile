@@ -8,8 +8,9 @@ WORKDIR /app
 COPY requirements.txt .
 
 # 安装依赖
-RUN pip install --no-cache-dir -r requirements.txt
-RUN apt-get update && apt-get install -y ffmpeg libsm6 libxext6 libgl1 && rm -rf /var/lib/apt/lists/*
+RUN pip install --no-cache-dir -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+RUN apt-get update && apt-get install -y ffmpeg libsm6 libxext6 libgl1 execstack && rm -rf /var/lib/apt/lists/*
+RUN python -c "import onnxruntime, glob, pathlib, subprocess; p = pathlib.Path(onnxruntime.__file__).resolve().parent / 'capi'; files = glob.glob(str(p / 'onnxruntime_pybind11_state*.so')); [subprocess.check_call(['execstack', '-c', f]) for f in files]"
 
 # 复制项目目录中的所有文件到镜像中
 COPY . .
