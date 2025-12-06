@@ -1,8 +1,7 @@
 flask
 gunicorn
 opencv-python-headless==4.7.0.72
-opencv-contrib-python==4.7.0.72
-onnxruntime-gpu==1.14.1
+onnxruntime==1.18.1
 requests
 shapely
 pyclipper
@@ -13,3 +12,5 @@ tqdm
 numpy<2.0.0
 pymupdf
 pdf2image
+customtkinter
+tkinterdnd2
