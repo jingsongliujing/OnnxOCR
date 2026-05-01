@@ -5,8 +5,8 @@ from typing import Dict, List, Optional, Sequence, Tuple
 
 import cv2
 import numpy as np
-import onnxruntime
 
+from .inference_engine import create_session
 
 PLATE_CHARS = (
     "#京沪津渝冀晋蒙辽吉黑苏浙皖闽赣鲁豫鄂湘粤桂琼川贵云藏陕甘青宁新"
@@ -31,12 +31,12 @@ class LicensePlateRecognizer:
             model_dir, "car_plate_detect.onnx"
         )
         self.rec_model_path = rec_model_path or os.path.join(model_dir, "plate_rec.onnx")
-        self.providers = list(providers or ["CPUExecutionProvider"])
+        self.providers = list(providers) if providers is not None else None
 
-        self.session_detect = onnxruntime.InferenceSession(
+        self.session_detect = create_session(
             self.detect_model_path, providers=self.providers
         )
-        self.session_rec = onnxruntime.InferenceSession(
+        self.session_rec = create_session(
             self.rec_model_path, providers=self.providers
         )
 

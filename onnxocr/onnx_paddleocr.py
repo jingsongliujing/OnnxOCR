@@ -3,6 +3,7 @@ import time
 
 from .license_plate import LicensePlateRecognizer
 from .predict_system import TextSystem
+from .table_recognition import TableRecognizer
 from .utils import draw_ocr
 from .utils import infer_args as init_args
 
@@ -10,11 +11,18 @@ from .utils import infer_args as init_args
 class ONNXPaddleOcr(TextSystem):
     def __init__(self, **kwargs):
         self.use_plate_recognition = kwargs.pop("use_plate_recognition", False)
+        self.use_table_recognition = kwargs.pop("use_table_recognition", False)
         self.plate_min_score = kwargs.pop("plate_min_score", 0.4)
         self.plate_iou_thresh = kwargs.pop("plate_iou_thresh", 0.5)
         plate_detect_model_path = kwargs.pop("plate_detect_model_path", None)
         plate_rec_model_path = kwargs.pop("plate_rec_model_path", None)
         plate_providers = kwargs.pop("plate_providers", None)
+        table_model_type = kwargs.pop("table_model_type", "slanet_plus")
+        table_model_path = kwargs.pop("table_model_path", None)
+        table_engine_cfg = kwargs.pop("table_engine_cfg", None)
+
+        if self.use_plate_recognition and self.use_table_recognition:
+            raise ValueError("use_plate_recognition and use_table_recognition cannot both be True.")
 
         if self.use_plate_recognition:
             self.plate_recognizer = LicensePlateRecognizer(
@@ -34,6 +42,13 @@ class ONNXPaddleOcr(TextSystem):
         params.__dict__.update(**kwargs)
 
         super().__init__(params)
+        self.table_recognizer = None
+        if self.use_table_recognition:
+            self.table_recognizer = TableRecognizer(
+                model_type=table_model_type,
+                model_path=table_model_path,
+                engine_cfg=table_engine_cfg,
+            )
 
     def ocr(self, img, det=True, rec=True, cls=True, plate_min_score=None, plate_iou_thresh=None):
         if self.use_plate_recognition:
@@ -43,6 +58,13 @@ class ONNXPaddleOcr(TextSystem):
                 iou_thresh=self.plate_iou_thresh if plate_iou_thresh is None else plate_iou_thresh,
             )
 
+        if self.use_table_recognition:
+            ocr_result = self._general_ocr(img, det=True, rec=True, cls=cls)
+            return self.table_recognizer.recognize(img, ocr_result[0])
+
+        return self._general_ocr(img, det=det, rec=rec, cls=cls)
+
+    def _general_ocr(self, img, det=True, rec=True, cls=True):
         if cls is True and self.use_angle_cls is False:
             print(
                 "Since the angle classifier is not initialized, the angle classifier will not be used during the forward process"

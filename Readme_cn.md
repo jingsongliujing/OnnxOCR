@@ -12,8 +12,9 @@
 ## 🚀 版本更新  
 - **2026.05.01**
   1. 新增 ONNX 车牌检测与车牌号识别能力。
-  2. `ONNXPaddleOcr` 新增 `use_plate_recognition` 参数，默认值为 `False`，原有通用 OCR 调用方式不受影响。
-  3. 新增 `/plate` 和 `/plate_api` HTTP 接口，用于车牌识别。
+  2. 新增基于 RapidTable 的 ONNX 表格识别能力。
+  3. `ONNXPaddleOcr` 新增 `use_plate_recognition` 和 `use_table_recognition` 参数，默认值均为 `False`，原有通用 OCR 调用方式不受影响。
+  4. 新增 `/plate`、`/plate_api`、`/table` 和 `/table_api` HTTP 接口。
 
 - **2025.05.21**  
   1. 新增 PP-OCRv5 模型，单模型支持 5 种文字类型：简体中文、繁体中文、中文拼音、英文和日文。  
@@ -107,6 +108,53 @@ onnxocr/models/license_plate/plate_rec.onnx
 ```
 
 
+## 🔧 推理引擎适配
+项目中的通用 OCR、车牌识别、表格识别都通过 `onnxocr/inference_engine.py` 创建 ONNXRuntime session。后续如果要适配下游厂商 GPU/NPU，国产化显卡（寒武纪、海光、华为昇腾）一般只需要在这个文件中调整 `build_providers()` 或 `create_session()`，业务推理模块不需要分别修改。
+
+
+## 📊 表格识别
+表格识别把 RapidTable 融合到 OnnxOCR 中，会复用当前通用 OCR 的文字检测和识别结果，再进行表格结构还原，最终输出 HTML、单元格框和逻辑行列坐标。
+
+```python
+from onnxocr.onnx_paddleocr import ONNXPaddleOcr
+
+table_model = ONNXPaddleOcr(
+    use_angle_cls=True,
+    use_gpu=False,
+    use_table_recognition=True,
+    table_model_type="slanet_plus",
+)
+table_result = table_model.ocr(img)
+print(table_result["html"])
+```
+
+### 参数说明
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| `use_table_recognition` | `False` | 设置为 `True` 时启用表格结构识别。 |
+| `table_model_type` | `slanet_plus` | 表格模型类型，支持 `slanet_plus`、`ppstructure_zh`、`ppstructure_en`。 |
+| `table_model_path` | 内置模型路径 | 可选，自定义表格 ONNX 模型路径。 |
+| `table_engine_cfg` | `{}` | 可选，RapidTable 的 ONNXRuntime 推理配置。 |
+
+### 模型文件位置
+```text
+onnxocr/models/table/slanet-plus.onnx
+onnxocr/models/table/ch_ppstructure_mobile_v2_SLANet.onnx
+onnxocr/models/table/en_ppstructure_mobile_v2_SLANet.onnx
+```
+
+### 返回格式
+```json
+{
+  "html": "<html><body><table>...</table></body></html>",
+  "cell_bboxes": [[10.0, 20.0, 80.0, 40.0]],
+  "logic_points": [[0, 0, 0, 0]],
+  "processing_time": 0.28,
+  "model_type": "slanet_plus"
+}
+```
+
+
 ## 📡 API 服务（CPU 示例）  
 ### 启动服务  
 ```bash  
@@ -164,6 +212,27 @@ curl -X POST http://localhost:5005/plate \
       "landmarks": [[240.73, 509.77], [298.16, 536.68], [297.6, 573.88], [240.76, 546.85]]
     }
   ]
+}
+```
+
+### 表格识别 API
+`app-service.py` 提供 `/table` 接口，`webui.py` 提供 `/table_api` 接口。
+
+#### 请求
+```bash
+curl -X POST http://localhost:5005/table \
+-H "Content-Type: application/json" \
+-d '{"image": "base64_encoded_image_data"}'
+```
+
+#### 响应
+```json
+{
+  "html": "<html><body><table>...</table></body></html>",
+  "cell_bboxes": [[10.0, 20.0, 80.0, 40.0]],
+  "logic_points": [[0, 0, 0, 0]],
+  "processing_time": 0.28,
+  "model_type": "slanet_plus"
 }
 ```
 
@@ -234,7 +303,8 @@ url: ip:5006/ocr
 
 
 ## 🎉 致谢  
-感谢 [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) 提供的技术支持！  
+非常感谢 [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) 提供的技术支持！  
+非常感谢 [RapidTable](https://github.com/RapidAI/RapidTable) 提供的表格识别模型和代码参考！
 
 
 ## 🌍 开源与捐赠  

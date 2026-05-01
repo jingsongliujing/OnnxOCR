@@ -40,6 +40,24 @@ def run_plate_ocr():
     print("plate OCR result:", result)
 
 
+def run_table_ocr():
+    table_model = ONNXPaddleOcr(
+        use_angle_cls=True,
+        use_gpu=False,
+        use_table_recognition=True,
+        table_model_type="slanet_plus",
+    )
+    img = cv2.imread("./onnxocr/test_images/table.jpg")
+    if img is None:
+        raise RuntimeError("Failed to read table OCR test image.")
+
+    start = time.time()
+    result = table_model.ocr(img)
+    print("table OCR total time: {:.3f}".format(time.time() - start))
+    print("table OCR html:", result["html"][:500])
+
+
 if __name__ == "__main__":
     run_general_ocr()
     run_plate_ocr()
+    run_table_ocr()

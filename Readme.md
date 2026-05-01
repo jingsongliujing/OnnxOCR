@@ -15,8 +15,9 @@ English | [简体中文](./Readme_cn.md) |
 ## 🚀 Version Updates  
 - **2026.05.01**
   1. Added ONNX license plate detection and recognition.
-  2. Added `use_plate_recognition` to `ONNXPaddleOcr`; the default value is `False`, so existing general OCR usage is unchanged.
-  3. Added `/plate` and `/plate_api` HTTP endpoints for license plate recognition.
+  2. Added RapidTable-based ONNX table recognition.
+  3. Added `use_plate_recognition` and `use_table_recognition` to `ONNXPaddleOcr`; both default to `False`, so existing general OCR usage is unchanged.
+  4. Added `/plate`, `/plate_api`, `/table`, and `/table_api` HTTP endpoints.
 
 - **2025.05.21**  
   1. Added PP-OCRv5 model, supporting 5 language types in a single model: Simplified Chinese, Traditional Chinese, Chinese Pinyin, English, and Japanese.  
@@ -109,6 +110,53 @@ onnxocr/models/license_plate/plate_rec.onnx
 ```
 
 
+## 🔧 Inference Engine Adaptation
+General OCR, license plate recognition, and table recognition all create ONNXRuntime sessions through `onnxocr/inference_engine.py`. To adapt a downstream vendor GPU/NPU, update `build_providers()` or `create_session()` in that file instead of changing each business module separately.
+
+
+## 📊 Table Recognition
+Table recognition is integrated from RapidTable and reuses OnnxOCR text detection/recognition results to restore table HTML.
+
+```python
+from onnxocr.onnx_paddleocr import ONNXPaddleOcr
+
+table_model = ONNXPaddleOcr(
+    use_angle_cls=True,
+    use_gpu=False,
+    use_table_recognition=True,
+    table_model_type="slanet_plus",
+)
+table_result = table_model.ocr(img)
+print(table_result["html"])
+```
+
+### Parameters
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `use_table_recognition` | `False` | Enables table structure recognition when set to `True`. |
+| `table_model_type` | `slanet_plus` | Table model type. Supported: `slanet_plus`, `ppstructure_zh`, `ppstructure_en`. |
+| `table_model_path` | built-in model path | Optional custom table ONNX model path. |
+| `table_engine_cfg` | `{}` | Optional ONNXRuntime engine config for RapidTable. |
+
+### Model Files
+```text
+onnxocr/models/table/slanet-plus.onnx
+onnxocr/models/table/ch_ppstructure_mobile_v2_SLANet.onnx
+onnxocr/models/table/en_ppstructure_mobile_v2_SLANet.onnx
+```
+
+### Result Format
+```json
+{
+  "html": "<html><body><table>...</table></body></html>",
+  "cell_bboxes": [[10.0, 20.0, 80.0, 40.0]],
+  "logic_points": [[0, 0, 0, 0]],
+  "processing_time": 0.28,
+  "model_type": "slanet_plus"
+}
+```
+
+
 ## 📡 API Service (CPU Example)  
 ### Start Service  
 ```bash  
@@ -166,6 +214,27 @@ curl -X POST http://localhost:5005/plate \
       "landmarks": [[240.73, 509.77], [298.16, 536.68], [297.6, 573.88], [240.76, 546.85]]
     }
   ]
+}
+```
+
+### Table Recognition API
+`app-service.py` provides `/table`, and `webui.py` provides `/table_api`.
+
+#### Request
+```bash
+curl -X POST http://localhost:5005/table \
+-H "Content-Type: application/json" \
+-d '{"image": "base64_encoded_image_data"}'
+```
+
+#### Response
+```json
+{
+  "html": "<html><body><table>...</table></body></html>",
+  "cell_bboxes": [[10.0, 20.0, 80.0, 40.0]],
+  "logic_points": [[0, 0, 0, 0]],
+  "processing_time": 0.28,
+  "model_type": "slanet_plus"
 }
 ```
 

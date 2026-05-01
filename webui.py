@@ -24,6 +24,7 @@ ocr_logic = OCRLogic(lambda msg: print(msg))
 # 独立 OCR 模型实例，避免影响 ocr_logic
 ocr_model_api = ONNXPaddleOcr(use_angle_cls=True, use_gpu=False)
 plate_model_api = None
+table_model_api = None
 
 
 def get_plate_model():
@@ -31,6 +32,13 @@ def get_plate_model():
     if plate_model_api is None:
         plate_model_api = ONNXPaddleOcr(use_plate_recognition=True, use_gpu=False)
     return plate_model_api
+
+
+def get_table_model():
+    global table_model_api
+    if table_model_api is None:
+        table_model_api = ONNXPaddleOcr(use_angle_cls=True, use_gpu=False, use_table_recognition=True)
+    return table_model_api
 
 @app.route("/")
 def index():
@@ -163,6 +171,26 @@ def plate_api():
         "processing_time": processing_time,
         "results": results
     })
+
+@app.route("/table_api", methods=["POST"])
+def table_api():
+    data = request.get_json()
+    if not data or "image" not in data:
+        return jsonify({"error": "Invalid request, 'image' field is required."}), 400
+    try:
+        image_bytes = base64.b64decode(data["image"])
+        image_np = np.frombuffer(image_bytes, dtype=np.uint8)
+        img = cv2.imdecode(image_np, cv2.IMREAD_COLOR)
+        if img is None:
+            return jsonify({"error": "Failed to decode image from base64."}), 400
+
+        start_time = time.time()
+        result = get_table_model().ocr(img)
+        processing_time = time.time() - start_time
+        result["processing_time"] = processing_time
+    except Exception as e:
+        return jsonify({"error": f"Table recognition failed: {str(e)}"}), 500
+    return jsonify(result)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5005, debug=True)

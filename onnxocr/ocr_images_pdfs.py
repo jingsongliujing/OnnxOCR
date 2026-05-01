@@ -241,7 +241,6 @@ class OCRLogic:
             self.model = ONNXPaddleOcr(**ocr_kwargs)
             if use_gpu:
                 try:
-                    import onnxruntime as ort
                     providers = self.model.session.get_providers() if hasattr(self.model, 'session') else []
                     if not any('CUDA' in p for p in providers):
                         msg = ("未检测到可用GPU，已自动切换为CPU推理。请检查CUDA/cuDNN环境配置。")
