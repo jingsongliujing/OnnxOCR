@@ -1,32 +1,49 @@
+import argparse
 import time
 
+from .license_plate import LicensePlateRecognizer
 from .predict_system import TextSystem
+from .utils import draw_ocr
 from .utils import infer_args as init_args
-from .utils import str2bool, draw_ocr
-import argparse
-import sys
 
 
 class ONNXPaddleOcr(TextSystem):
     def __init__(self, **kwargs):
-        # 默认参数
+        self.use_plate_recognition = kwargs.pop("use_plate_recognition", False)
+        self.plate_min_score = kwargs.pop("plate_min_score", 0.4)
+        self.plate_iou_thresh = kwargs.pop("plate_iou_thresh", 0.5)
+        plate_detect_model_path = kwargs.pop("plate_detect_model_path", None)
+        plate_rec_model_path = kwargs.pop("plate_rec_model_path", None)
+        plate_providers = kwargs.pop("plate_providers", None)
+
+        if self.use_plate_recognition:
+            self.plate_recognizer = LicensePlateRecognizer(
+                detect_model_path=plate_detect_model_path,
+                rec_model_path=plate_rec_model_path,
+                providers=plate_providers,
+            )
+            return
+
         parser = init_args()
         inference_args_dict = {}
         for action in parser._actions:
             inference_args_dict[action.dest] = action.default
         params = argparse.Namespace(**inference_args_dict)
 
-        # params.rec_image_shape = "3, 32, 320"
         params.rec_image_shape = "3, 48, 320"
-
-        # 根据传入的参数覆盖更新默认参数
         params.__dict__.update(**kwargs)
 
-        # 初始化模型
         super().__init__(params)
 
-    def ocr(self, img, det=True, rec=True, cls=True):
-        if cls == True and self.use_angle_cls == False:
+    def ocr(self, img, det=True, rec=True, cls=True, plate_min_score=None, plate_iou_thresh=None):
+        if self.use_plate_recognition:
+            return self.plate_recognizer.recognize(
+                img,
+                min_score=self.plate_min_score if plate_min_score is None else plate_min_score,
+                iou_thresh=self.plate_iou_thresh if plate_iou_thresh is None else plate_iou_thresh,
+            )
+
+        if cls is True and self.use_angle_cls is False:
             print(
                 "Since the angle classifier is not initialized, the angle classifier will not be used during the forward process"
             )
@@ -62,12 +79,9 @@ class ONNXPaddleOcr(TextSystem):
 
 
 def sav2Img(org_img, result, name="draw_ocr.jpg"):
-    # 显示结果
     from PIL import Image
 
     result = result[0]
-    # image = Image.open(img_path).convert('RGB')
-    # 图像转BGR2RGB
     image = org_img[:, :, ::-1]
     boxes = [line[0] for line in result]
     txts = [line[1][0] for line in result]

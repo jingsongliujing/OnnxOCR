@@ -10,6 +10,14 @@ app = Flask(__name__)
 
 # 初始化 OCR 模型
 model = ONNXPaddleOcr(use_angle_cls=True, use_gpu=False)
+plate_model = None
+
+
+def get_plate_model():
+    global plate_model
+    if plate_model is None:
+        plate_model = ONNXPaddleOcr(use_plate_recognition=True, use_gpu=False)
+    return plate_model
 
 @app.route('/')
 def index():
@@ -64,6 +72,36 @@ def ocr_service():
 
     except Exception as e:
         # 捕获所有异常并返回错误信息
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+
+
+@app.route('/plate', methods=['POST'])
+def plate_service():
+    try:
+        data = request.get_json()
+        if not data or "image" not in data:
+            return jsonify({"error": "Invalid request, 'image' field is required."}), 400
+
+        try:
+            min_score = float(data.get("min_score", 0.4))
+        except (TypeError, ValueError):
+            return jsonify({"error": "'min_score' must be a number."}), 400
+
+        start_time = time.time()
+        image_bytes = base64.b64decode(data["image"])
+        image_np = np.frombuffer(image_bytes, dtype=np.uint8)
+        img = cv2.imdecode(image_np, cv2.IMREAD_COLOR)
+        if img is None:
+            return jsonify({"error": "Failed to decode image from base64."}), 400
+        results = get_plate_model().ocr(img, plate_min_score=min_score)
+        processing_time = time.time() - start_time
+
+        return jsonify({
+            "processing_time": processing_time,
+            "results": results
+        })
+
+    except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
 

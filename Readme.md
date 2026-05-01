@@ -13,6 +13,11 @@ English | [简体中文](./Readme_cn.md) |
 
 
 ## 🚀 Version Updates  
+- **2026.05.01**
+  1. Added ONNX license plate detection and recognition.
+  2. Added `use_plate_recognition` to `ONNXPaddleOcr`; the default value is `False`, so existing general OCR usage is unchanged.
+  3. Added `/plate` and `/plate_api` HTTP endpoints for license plate recognition.
+
 - **2025.05.21**  
   1. Added PP-OCRv5 model, supporting 5 language types in a single model: Simplified Chinese, Traditional Chinese, Chinese Pinyin, English, and Japanese.  
   2. Overall recognition accuracy improved by 13% compared to PP-OCRv4.  
@@ -45,6 +50,63 @@ pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
 ```bash  
 python test_ocr.py  
 ```  
+
+`test_ocr.py` now includes both general OCR and license plate OCR examples.
+
+
+## 🚗 License Plate Recognition
+License plate recognition is integrated into `ONNXPaddleOcr` as an optional mode. Existing code keeps using the general OCR pipeline:
+
+```python
+from onnxocr.onnx_paddleocr import ONNXPaddleOcr
+
+general_model = ONNXPaddleOcr(use_angle_cls=True, use_gpu=False)
+general_result = general_model.ocr(img)
+```
+
+Enable license plate recognition by setting `use_plate_recognition=True`:
+
+```python
+from onnxocr.onnx_paddleocr import ONNXPaddleOcr
+
+plate_model = ONNXPaddleOcr(
+    use_angle_cls=True,
+    use_gpu=False,
+    use_plate_recognition=True,
+    plate_min_score=0.4,
+)
+plate_result = plate_model.ocr(img)
+```
+
+### Parameters
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `use_plate_recognition` | `False` | Enables license plate detection and recognition when set to `True`. |
+| `plate_min_score` | `0.4` | Minimum confidence threshold for plate detection. |
+| `plate_iou_thresh` | `0.5` | NMS IoU threshold for plate detection. |
+| `plate_detect_model_path` | built-in model path | Optional custom plate detection ONNX model path. |
+| `plate_rec_model_path` | built-in model path | Optional custom plate recognition ONNX model path. |
+| `plate_providers` | `["CPUExecutionProvider"]` | Optional ONNX Runtime providers for plate models. |
+
+### Model Files
+```text
+onnxocr/models/license_plate/car_plate_detect.onnx
+onnxocr/models/license_plate/plate_rec.onnx
+```
+
+### Result Format
+```json
+[
+  {
+    "cls": "plate",
+    "axis": [239, 508, 298, 574],
+    "score": 0.9027,
+    "plate": "浙B2V9L7",
+    "type": "single_layer",
+    "landmarks": [[240.73, 509.77], [298.16, 536.68], [297.6, 573.88], [240.76, 546.85]]
+  }
+]
+```
 
 
 ## 📡 API Service (CPU Example)  
@@ -79,6 +141,33 @@ curl -X POST http://localhost:5005/ocr \
   ]  
 }  
 ```  
+
+### License Plate API
+`app-service.py` provides `/plate`, and `webui.py` provides `/plate_api`. Both endpoints accept the same base64 JSON format as the general OCR API.
+
+#### Request
+```bash
+curl -X POST http://localhost:5005/plate \
+-H "Content-Type: application/json" \
+-d '{"image": "base64_encoded_image_data", "min_score": 0.4}'
+```
+
+#### Response
+```json
+{
+  "processing_time": 0.158,
+  "results": [
+    {
+      "cls": "plate",
+      "axis": [239, 508, 298, 574],
+      "score": 0.9027,
+      "plate": "浙B2V9L7",
+      "type": "single_layer",
+      "landmarks": [[240.73, 509.77], [298.16, 536.68], [297.6, 573.88], [240.76, 546.85]]
+    }
+  ]
+}
+```
 
 
 ## 🐳 Docker Image Environment (CPU)  

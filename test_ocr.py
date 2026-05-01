@@ -1,21 +1,45 @@
+import os
+import time
+
 import cv2
-import time
-from onnxocr.onnx_paddleocr import ONNXPaddleOcr,sav2Img
-import sys
-import time
-#固定到onnx路径·
-# sys.path.append('./paddle_to_onnx/onnx')
 
-model = ONNXPaddleOcr(use_angle_cls=True, use_gpu=False)
+from onnxocr.onnx_paddleocr import ONNXPaddleOcr, sav2Img
 
 
-img = cv2.imread('./onnxocr/test_images/715873facf064583b44ef28295126fa7.jpg')
-s = time.time()
-result = model.ocr(img)
-e = time.time()
-print("total time: {:.3f}".format(e - s))
-print("result:", result)
-for box in result[0]:
-    print(box)
+def run_general_ocr():
+    model = ONNXPaddleOcr(use_angle_cls=True, use_gpu=False)
+    img = cv2.imread("./onnxocr/test_images/715873facf064583b44ef28295126fa7.jpg")
+    if img is None:
+        raise RuntimeError("Failed to read general OCR test image.")
 
-sav2Img(img, result,name=str(time.time())+'.jpg')
+    start = time.time()
+    result = model.ocr(img)
+    print("general OCR total time: {:.3f}".format(time.time() - start))
+    print("general OCR result:", result)
+    for box in result[0]:
+        print(box)
+
+    os.makedirs("./result_img", exist_ok=True)
+    sav2Img(img, result, name="./result_img/test_ocr_general.jpg")
+
+
+def run_plate_ocr():
+    plate_model = ONNXPaddleOcr(
+        use_angle_cls=True,
+        use_gpu=False,
+        use_plate_recognition=True,
+        plate_min_score=0.4,
+    )
+    img = cv2.imread("./onnxocr/test_images/license_plate_single_blue.jpg")
+    if img is None:
+        raise RuntimeError("Failed to read license plate OCR test image.")
+
+    start = time.time()
+    result = plate_model.ocr(img)
+    print("plate OCR total time: {:.3f}".format(time.time() - start))
+    print("plate OCR result:", result)
+
+
+if __name__ == "__main__":
+    run_general_ocr()
+    run_plate_ocr()

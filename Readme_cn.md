@@ -10,6 +10,11 @@
 
 
 ## 🚀 版本更新  
+- **2026.05.01**
+  1. 新增 ONNX 车牌检测与车牌号识别能力。
+  2. `ONNXPaddleOcr` 新增 `use_plate_recognition` 参数，默认值为 `False`，原有通用 OCR 调用方式不受影响。
+  3. 新增 `/plate` 和 `/plate_api` HTTP 接口，用于车牌识别。
+
 - **2025.05.21**  
   1. 新增 PP-OCRv5 模型，单模型支持 5 种文字类型：简体中文、繁体中文、中文拼音、英文和日文。  
   2. 整体识别精度相比ppocrv4提升13个百分点
@@ -44,6 +49,63 @@ pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
 python test_ocr.py  
 ```  
 
+`test_ocr.py` 已包含通用 OCR 和车牌识别两种示例。
+
+
+## 🚗 车牌识别
+车牌识别已作为可选模式融合到 `ONNXPaddleOcr` 中。默认仍然使用原来的通用 OCR 流程，因此已有代码无需修改：
+
+```python
+from onnxocr.onnx_paddleocr import ONNXPaddleOcr
+
+general_model = ONNXPaddleOcr(use_angle_cls=True, use_gpu=False)
+general_result = general_model.ocr(img)
+```
+
+需要车牌识别时，增加 `use_plate_recognition=True`：
+
+```python
+from onnxocr.onnx_paddleocr import ONNXPaddleOcr
+
+plate_model = ONNXPaddleOcr(
+    use_angle_cls=True,
+    use_gpu=False,
+    use_plate_recognition=True,
+    plate_min_score=0.4,
+)
+plate_result = plate_model.ocr(img)
+```
+
+### 参数说明
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| `use_plate_recognition` | `False` | 设置为 `True` 时启用车牌检测与识别。 |
+| `plate_min_score` | `0.4` | 车牌检测最小置信度阈值。 |
+| `plate_iou_thresh` | `0.5` | 车牌检测 NMS 的 IoU 阈值。 |
+| `plate_detect_model_path` | 内置模型路径 | 可选，自定义车牌检测 ONNX 模型路径。 |
+| `plate_rec_model_path` | 内置模型路径 | 可选，自定义车牌识别 ONNX 模型路径。 |
+| `plate_providers` | `["CPUExecutionProvider"]` | 可选，车牌模型使用的 ONNX Runtime providers。 |
+
+### 模型文件位置
+```text
+onnxocr/models/license_plate/car_plate_detect.onnx
+onnxocr/models/license_plate/plate_rec.onnx
+```
+
+### 返回格式
+```json
+[
+  {
+    "cls": "plate",
+    "axis": [239, 508, 298, 574],
+    "score": 0.9027,
+    "plate": "浙B2V9L7",
+    "type": "single_layer",
+    "landmarks": [[240.73, 509.77], [298.16, 536.68], [297.6, 573.88], [240.76, 546.85]]
+  }
+]
+```
+
 
 ## 📡 API 服务（CPU 示例）  
 ### 启动服务  
@@ -77,6 +139,33 @@ curl -X POST http://localhost:5005/ocr \
   ]  
 }  
 ```  
+
+### 车牌识别 API
+`app-service.py` 提供 `/plate` 接口，`webui.py` 提供 `/plate_api` 接口。两个接口都使用和通用 OCR 一致的 base64 JSON 图片输入格式。
+
+#### 请求
+```bash
+curl -X POST http://localhost:5005/plate \
+-H "Content-Type: application/json" \
+-d '{"image": "base64_encoded_image_data", "min_score": 0.4}'
+```
+
+#### 响应
+```json
+{
+  "processing_time": 0.158,
+  "results": [
+    {
+      "cls": "plate",
+      "axis": [239, 508, 298, 574],
+      "score": 0.9027,
+      "plate": "浙B2V9L7",
+      "type": "single_layer",
+      "landmarks": [[240.73, 509.77], [298.16, 536.68], [297.6, 573.88], [240.76, 546.85]]
+    }
+  ]
+}
+```
 
 
 ## 🐳 Docker 镜像环境（CPU）  
