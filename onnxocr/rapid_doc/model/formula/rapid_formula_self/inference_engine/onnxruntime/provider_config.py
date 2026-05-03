@@ -1,0 +1,1 @@
+﻿from onnxocr.inference_engine import ProviderConfig

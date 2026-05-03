@@ -352,6 +352,14 @@ def infer_args():
     parser.add_argument("--label_list", type=list, default=["0", "180"])
     parser.add_argument("--cls_batch_num", type=int, default=6)
     parser.add_argument("--cls_thresh", type=float, default=0.9)
+    parser.add_argument("--use_rapid_orientation", type=str2bool, default=True)
+    parser.add_argument(
+        "--orientation_model_dir",
+        type=str,
+        default=str(module_dir / "models/orientation/rapid_orientation.onnx"),
+    )
+    parser.add_argument("--orientation_batch_num", type=int, default=6)
+    parser.add_argument("--orientation_thresh", type=float, default=0.9)
 
     parser.add_argument("--enable_mkldnn", type=str2bool, default=False)
     parser.add_argument("--cpu_threads", type=int, default=10)

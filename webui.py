@@ -3,6 +3,7 @@ import time
 import zipfile
 from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for
 from werkzeug.utils import secure_filename
+from onnxocr.layout_markdown import LayoutMarkdownConverter
 from onnxocr.ocr_images_pdfs import OCRLogic
 import cv2
 import base64
@@ -32,6 +33,7 @@ ocr_model_api = ONNXPaddleOcr(use_angle_cls=True, use_gpu=False)
 plate_model_api = None
 table_model_api = None
 layout_models_api = {}
+layout_markdown_converters_api = {}
 
 
 def get_plate_model():
@@ -59,6 +61,31 @@ def get_layout_model(model_type="pp_layout_cdla", conf_thresh=0.5, iou_thresh=0.
             layout_iou_thresh=float(iou_thresh),
         )
     return layout_models_api[key]
+
+
+def get_layout_markdown_converter(model_type="pp_doclayoutv2", conf_thresh=0.4, iou_thresh=0.5):
+    key = (model_type, float(conf_thresh), float(iou_thresh))
+    if key not in layout_markdown_converters_api:
+        layout_markdown_converters_api[key] = LayoutMarkdownConverter(
+            layout_model_type=model_type,
+            layout_conf_thresh=float(conf_thresh),
+            layout_iou_thresh=float(iou_thresh),
+            ocr_kwargs={"use_angle_cls": True, "use_gpu": False},
+        )
+    return layout_markdown_converters_api[key]
+
+
+def save_upload_file(file, session_dir):
+    raw_name = file.filename or "document"
+    filename = secure_filename(raw_name)
+    original_suffix = os.path.splitext(raw_name)[1]
+    if not filename:
+        filename = f"document{original_suffix or '.bin'}"
+    elif original_suffix and not os.path.splitext(filename)[1]:
+        filename = f"{filename}{original_suffix}"
+    file_path = os.path.join(session_dir, filename)
+    file.save(file_path)
+    return file_path
 
 @app.route("/")
 def index():
@@ -231,8 +258,8 @@ def layout_api():
         if img is None:
             return jsonify({"error": "Failed to decode image from base64."}), 400
 
-        model_type = data.get("model_type", "pp_layout_cdla")
-        conf_thresh = float(data.get("conf_thresh", 0.5))
+        model_type = data.get("model_type", "pp_doclayoutv2")
+        conf_thresh = float(data.get("conf_thresh", 0.4))
         iou_thresh = float(data.get("iou_thresh", 0.5))
         start_time = time.time()
         result = get_layout_model(model_type, conf_thresh, iou_thresh).ocr(img)
@@ -242,6 +269,109 @@ def layout_api():
     except Exception as e:
         return jsonify({"error": f"Layout analysis failed: {str(e)}"}), 500
     return jsonify(result)
+
+
+@app.route("/layout_markdown_api", methods=["POST"])
+def layout_markdown_api():
+    data = request.get_json()
+    if not data or "image" not in data:
+        return jsonify({"error": "Invalid request, 'image' field is required."}), 400
+    try:
+        image_bytes = base64.b64decode(data["image"])
+        image_np = np.frombuffer(image_bytes, dtype=np.uint8)
+        img = cv2.imdecode(image_np, cv2.IMREAD_COLOR)
+        if img is None:
+            return jsonify({"error": "Failed to decode image from base64."}), 400
+
+        model_type = data.get("model_type", "pp_layout_cdla")
+        conf_thresh = float(data.get("conf_thresh", 0.5))
+        iou_thresh = float(data.get("iou_thresh", 0.5))
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        session_dir = os.path.join(RESULT_ROOT, timestamp)
+        os.makedirs(session_dir, exist_ok=True)
+        filename = secure_filename(data.get("filename", "layout_markdown.md")) or "layout_markdown.md"
+        if not filename.lower().endswith(".md"):
+            filename = f"{filename}.md"
+        output_md_path = os.path.join(session_dir, filename)
+
+        result = get_layout_markdown_converter(model_type, conf_thresh, iou_thresh).convert_images(
+            [img],
+            output_md_path=output_md_path,
+            source_name=os.path.splitext(filename)[0],
+        )
+        if data.get("visualize", False):
+            result["visualization"] = image_to_base64(draw_layout_analysis(img, result["pages"][0]["layout"]))
+    except Exception as e:
+        return jsonify({"error": f"Layout markdown failed: {str(e)}"}), 500
+    return jsonify(result)
+
+
+@app.route("/layout_markdown_file", methods=["POST"])
+def layout_markdown_file():
+    files = request.files.getlist("files")
+    if not files:
+        single_file = request.files.get("file")
+        files = [single_file] if single_file else []
+    if not files:
+        return jsonify({"success": False, "msg": "缺少上传文件"}), 400
+
+    try:
+        model_type = request.form.get("model_type", "pp_doclayoutv2")
+        conf_thresh = float(request.form.get("conf_thresh", 0.4))
+        iou_thresh = float(request.form.get("iou_thresh", 0.5))
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        session_dir = os.path.join(RESULT_ROOT, timestamp)
+        os.makedirs(session_dir, exist_ok=True)
+        converter = get_layout_markdown_converter(model_type, conf_thresh, iou_thresh)
+
+        results = []
+        md_files = []
+        for file in files:
+            file_path = save_upload_file(file, session_dir)
+            stem = os.path.splitext(os.path.basename(file_path))[0]
+            output_md_path = os.path.join(session_dir, f"{stem}.md")
+            result = converter.convert_file(file_path, output_md_path=output_md_path)
+            md_files.append(result["markdown_path"])
+            results.append(
+                {
+                    "filename": os.path.basename(file_path),
+                    "markdown_path": result["markdown_path"],
+                    "assets_dir": result["assets_dir"],
+                    "processing_time": result["processing_time"],
+                    "content": result["markdown"],
+                }
+            )
+
+        zip_path = os.path.join(session_dir, f"layout_markdown_{timestamp}.zip")
+        with zipfile.ZipFile(zip_path, "w") as zipf:
+            for md_path in md_files:
+                zipf.write(md_path, os.path.basename(md_path))
+                assets_dir = os.path.splitext(md_path)[0] + "_assets"
+                if os.path.isdir(assets_dir):
+                    for root, _, filenames in os.walk(assets_dir):
+                        for filename in filenames:
+                            asset_path = os.path.join(root, filename)
+                            zipf.write(asset_path, os.path.relpath(asset_path, session_dir))
+
+    except Exception as e:
+        return jsonify({"success": False, "msg": f"版面转 Markdown 失败: {e}"}), 500
+
+    return jsonify(
+        {
+            "success": True,
+            "results": results,
+            "zip_url": f"/download_layout_markdown/{timestamp}",
+        }
+    )
+
+
+@app.route("/download_layout_markdown/<timestamp>")
+def download_layout_markdown_zip(timestamp):
+    session_dir = os.path.join(RESULT_ROOT, timestamp)
+    zip_path = os.path.join(session_dir, f"layout_markdown_{timestamp}.zip")
+    if os.path.exists(zip_path):
+        return send_file(zip_path, as_attachment=True, download_name=f"layout_markdown_{timestamp}.zip")
+    return jsonify({"success": False, "msg": "文件不存在"}), 404
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5005, debug=True)

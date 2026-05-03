@@ -4,6 +4,7 @@
 import argparse
 import time
 from dataclasses import asdict
+from types import SimpleNamespace
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union, get_args
 
@@ -20,7 +21,6 @@ from .utils import (
     RapidTableInput,
     RapidTableOutput,
     format_ocr_results,
-    import_package,
     is_url,
 )
 
@@ -44,20 +44,26 @@ class RapidTable:
         self.load_img = LoadImage()
 
     def _init_ocr_engine(self, params: Dict[Any, Any]):
-        rapidocr_ = import_package("rapidocr")
-        if rapidocr_ is None:
-            logger.warning("rapidocr package is not installed, only table rec")
-            return None
+        from onnxocr.onnx_paddleocr import ONNXPaddleOcr
 
-        if not params:
-            return rapidocr_.RapidOCR()
-        return rapidocr_.RapidOCR(params=params)
+        params = params or {}
+        engine = ONNXPaddleOcr(use_angle_cls=False, use_gpu=bool(params.get("use_gpu", False)))
+
+        class LocalOcrEngine:
+            def __call__(self, img):
+                result = engine.ocr(img, det=True, rec=True, cls=False)[0]
+                if not result:
+                    return SimpleNamespace(boxes=None, txts=[], scores=[])
+                boxes = np.asarray([item[0] for item in result], dtype=np.float32)
+                txts = [item[1][0] for item in result]
+                scores = [float(item[1][1]) for item in result]
+                return SimpleNamespace(boxes=boxes, txts=txts, scores=scores)
+
+        return LocalOcrEngine()
 
     def _init_table_structer(self):
         if self.cfg.model_type == ModelType.UNITABLE:
-            from .table_structure.unitable import UniTableStructure
-
-            return UniTableStructure(asdict(self.cfg))
+            raise ValueError("UNITABLE requires a Torch backend and is not shipped in OnnxOCR.")
 
         from .table_structure.pp_structure import PPTableStructurer
 
@@ -148,7 +154,7 @@ class RapidTable:
         if self.ocr_engine is None:
             self.ocr_engine = self._init_ocr_engine(self.cfg.ocr_params)
         if self.ocr_engine is None:
-            raise RuntimeError("OCR results were not provided and rapidocr is not installed.")
+            raise RuntimeError("OCR results were not provided and no local OCR engine is available.")
 
         for img in tqdm(imgs, desc="OCR"):
             if img is None:

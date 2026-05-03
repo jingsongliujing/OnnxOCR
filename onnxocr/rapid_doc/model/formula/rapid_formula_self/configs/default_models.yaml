@@ -1,0 +1,18 @@
+onnxruntime:
+  pp_formulanet_plus_s:
+    model_dir_or_path: https://www.modelscope.cn/models/RapidAI/RapidDoc/resolve/v1.0.0/formula/PP-FormulaNet_plus-S/pp_formulanet_plus_s.onnx
+    SHA256: 30998d10c94ccff1ad8981df0c71048cb1f3eec7b1e515b809767f1f72aebe3b
+
+  pp_formulanet_plus_m:
+    model_dir_or_path: https://www.modelscope.cn/models/RapidAI/RapidDoc/resolve/v1.0.0/formula/PP-FormulaNet_plus-M/pp_formulanet_plus_m.onnx
+    SHA256: 71b6d389cf7b857e45252a4b98cfced1a3ffca7bf24d9497d02d052a41d9493b
+
+  pp_formulanet_plus_l:
+    model_dir_or_path: https://www.modelscope.cn/models/RapidAI/RapidDoc/resolve/v1.0.0/formula/PP-FormulaNet_plus-L/pp_formulanet_plus_l.onnx
+    SHA256: 5ef81a0b197ea2c8c1463b31c3eb2ad0ae1eb655fb1ff3b550858c7d85bc84e8
+
+torch:
+  pp_formulanet_plus_m:
+    model_dir_or_path: https://www.modelscope.cn/models/RapidAI/RapidDoc/resolve/master/formula/PP-FormulaNet_plus-M/pp_formulanet_plus_m.pth
+    dict_url: https://www.modelscope.cn/models/RapidAI/RapidDoc/resolve/master/formula/PP-FormulaNet_plus-M/pp_formulanet_plus_m_inference.yml
+    SHA256: 034efee70ef56d8ab7cf3b9b945865cdaf22461ad03b0f6e68bf9234f167f035

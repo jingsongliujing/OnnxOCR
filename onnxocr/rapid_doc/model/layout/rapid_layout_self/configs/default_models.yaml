@@ -1,0 +1,35 @@
+pp_doclayout_plus_l:
+  model_dir_or_path: https://www.modelscope.cn/models/RapidAI/RapidDoc/resolve/v1.0.0/layout/PP-DocLayout_plus-L/pp_doclayout_plus_l.onnx
+  SHA256: 3e0a48f1eead902e83e04695430597e92207ef50e19b06bdf65f46096ba6bbd3
+
+pp_doclayoutv2:
+  model_dir_or_path: https://www.modelscope.cn/models/RapidAI/RapidDoc/resolve/master/layout/PP-DocLayoutV2/pp_doclayoutv2.onnx
+  SHA256: 9fedca3a2ebfdce73fc36f7842a4cabe0a4fe8c0ee33a446ca358ed500907b29
+
+pp_doclayoutv3:
+  model_dir_or_path: https://www.modelscope.cn/models/RapidAI/RapidDoc/resolve/master/layout/PP-DocLayoutV3/pp_doclayoutv3.onnx
+  SHA256: b9a2759e51ee2cc9d98f10cea21caf5862043b882b5f57c683eaf6fa247196a3
+
+pp_doclayout_l:
+  model_dir_or_path: https://www.modelscope.cn/models/RapidAI/RapidDoc/resolve/v1.0.0/layout/PP-DocLayout-L/pp_doclayout_l.onnx
+  SHA256: 116d4a65052187be1ed408d6286fc5a5a07de361a1c85969d633d7ca56a73c05
+
+pp_doclayout_m:
+  model_dir_or_path: https://www.modelscope.cn/models/RapidAI/RapidDoc/resolve/v1.0.0/layout/PP-DocLayout-M/pp_doclayout_m.onnx
+  SHA256: 2e5997712f69e2db59e78fc837e0e3ee9e71cba4d41fa57125e438950f37196d
+
+pp_doclayout_s:
+  model_dir_or_path: https://www.modelscope.cn/models/RapidAI/RapidDoc/resolve/v1.0.0/layout/PP-DocLayout-S/pp_doclayout_s.onnx
+  SHA256: 0ae97252feb0d64ee2c70ee0449ec9de4b08140056f32ce3c725c16ca50142e4
+
+doclayout_docstructbench:
+  model_dir_or_path: https://www.modelscope.cn/models/RapidAI/RapidLayout/resolve/v1.0.0/onnx/doclayout/doclayout_yolo_docstructbench_imgsz1024.onnx
+  SHA256: 3b452baef10ecabd615491bc82cc4d49475fbc2cd7a8e535044f2c6bb28fb9fe
+
+rt_detr_l_wired_table_cell_det:
+  model_dir_or_path: https://www.modelscope.cn/models/RapidAI/RapidDoc/resolve/v1.0.0/table/RT-DETR-L_wired_table_cell_det/rt_detr_l_wired_table_cell_det.onnx
+  SHA256: d0996593ce241ecc4ea08811a858a2ac1a7e438e3260f98562010fd8efc6951e
+
+rt_detr_l_wireless_table_cell_det:
+  model_dir_or_path: https://www.modelscope.cn/models/RapidAI/RapidDoc/resolve/v1.0.0/table/RT-DETR-L_wireless_table_cell_det/rt_detr_l_wireless_table_cell_det.onnx
+  SHA256: 3085db96c666ac5dfb9ae52b119ac4fa739f4a320c71c51fda28bd7fd700807e

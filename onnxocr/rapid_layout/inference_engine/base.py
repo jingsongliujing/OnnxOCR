@@ -75,12 +75,4 @@ def get_engine(engine_type: EngineType):
 
         return OrtInferSession
 
-    elif engine_type == EngineType.OPENVINO:
-        if not import_package(engine_type.value):
-            raise ImportError(f"{engine_type.value} is not installed.")
-
-        from .openvino import OpenVINOInferSession
-
-        return OpenVINOInferSession
-
-    raise ValueError(f"Unsupported engine: {engine_type.value}")
+    raise ValueError(f"Unsupported engine: {engine_type.value}. OnnxOCR only ships ONNXRuntime inference.")

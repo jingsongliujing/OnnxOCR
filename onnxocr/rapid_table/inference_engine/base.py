@@ -60,12 +60,4 @@ def get_engine(engine_type: EngineType):
 
         return OrtInferSession
 
-    if engine_type == EngineType.TORCH:
-        if not import_package(engine_type.value):
-            raise ImportError(f"{engine_type.value} is not installed")
-
-        from .torch import TorchInferSession
-
-        return TorchInferSession
-
-    raise ValueError(f"Unsupported engine: {engine_type.value}")
+    raise ValueError(f"Unsupported engine: {engine_type.value}. OnnxOCR only ships ONNXRuntime inference.")

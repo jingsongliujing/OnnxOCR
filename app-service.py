@@ -1,8 +1,11 @@
 import cv2
 import time
 import base64
+import os
 import numpy as np
 from flask import Flask, request, jsonify,render_template
+from werkzeug.utils import secure_filename
+from onnxocr.layout_markdown import LayoutMarkdownConverter
 from onnxocr.onnx_paddleocr import ONNXPaddleOcr
 from onnxocr.visualization import (
     draw_layout_analysis,
@@ -19,6 +22,7 @@ model = ONNXPaddleOcr(use_angle_cls=True, use_gpu=False)
 plate_model = None
 table_model = None
 layout_models = {}
+layout_markdown_converters = {}
 
 
 def get_plate_model():
@@ -46,6 +50,18 @@ def get_layout_model(model_type="pp_layout_cdla", conf_thresh=0.5, iou_thresh=0.
             layout_iou_thresh=float(iou_thresh),
         )
     return layout_models[key]
+
+
+def get_layout_markdown_converter(model_type="pp_doclayoutv2", conf_thresh=0.4, iou_thresh=0.5):
+    key = (model_type, float(conf_thresh), float(iou_thresh))
+    if key not in layout_markdown_converters:
+        layout_markdown_converters[key] = LayoutMarkdownConverter(
+            layout_model_type=model_type,
+            layout_conf_thresh=float(conf_thresh),
+            layout_iou_thresh=float(iou_thresh),
+            ocr_kwargs={"use_angle_cls": True, "use_gpu": False},
+        )
+    return layout_markdown_converters[key]
 
 @app.route('/')
 def index():
@@ -177,14 +193,52 @@ def layout_service():
         if img is None:
             return jsonify({"error": "Failed to decode image from base64."}), 400
 
-        model_type = data.get("model_type", "pp_layout_cdla")
-        conf_thresh = float(data.get("conf_thresh", 0.5))
+        model_type = data.get("model_type", "pp_doclayoutv2")
+        conf_thresh = float(data.get("conf_thresh", 0.4))
         iou_thresh = float(data.get("iou_thresh", 0.5))
         start_time = time.time()
         result = get_layout_model(model_type, conf_thresh, iou_thresh).ocr(img)
         result["processing_time"] = time.time() - start_time
         if data.get("visualize", False):
             result["visualization"] = image_to_base64(draw_layout_analysis(img, result))
+
+        return jsonify(result)
+
+    except Exception as e:
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+
+
+@app.route('/layout_markdown', methods=['POST'])
+def layout_markdown_service():
+    try:
+        data = request.get_json()
+        if not data or "image" not in data:
+            return jsonify({"error": "Invalid request, 'image' field is required."}), 400
+
+        image_bytes = base64.b64decode(data["image"])
+        image_np = np.frombuffer(image_bytes, dtype=np.uint8)
+        img = cv2.imdecode(image_np, cv2.IMREAD_COLOR)
+        if img is None:
+            return jsonify({"error": "Failed to decode image from base64."}), 400
+
+        model_type = data.get("model_type", "pp_layout_cdla")
+        conf_thresh = float(data.get("conf_thresh", 0.5))
+        iou_thresh = float(data.get("iou_thresh", 0.5))
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        result_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "results", timestamp)
+        os.makedirs(result_dir, exist_ok=True)
+        filename = secure_filename(data.get("filename", "layout_markdown.md")) or "layout_markdown.md"
+        if not filename.lower().endswith(".md"):
+            filename = f"{filename}.md"
+        output_md_path = os.path.join(result_dir, filename)
+
+        result = get_layout_markdown_converter(model_type, conf_thresh, iou_thresh).convert_images(
+            [img],
+            output_md_path=output_md_path,
+            source_name=os.path.splitext(os.path.basename(output_md_path))[0],
+        )
+        if data.get("visualize", False):
+            result["visualization"] = image_to_base64(draw_layout_analysis(img, result["pages"][0]["layout"]))
 
         return jsonify(result)
 

@@ -1,0 +1,30 @@
+ppstructure_en:
+  model_dir_or_path: https://www.modelscope.cn/models/RapidAI/RapidTable/resolve/v2.0.0/en_ppstructure_mobile_v2_SLANet.onnx
+  SHA256: 2cae17d16a16f9df7229e21665fe3fbe06f3ca85b2024772ee3e3142e955aa60
+
+ppstructure_zh:
+  model_dir_or_path: https://www.modelscope.cn/models/RapidAI/RapidTable/resolve/v2.0.0/ch_ppstructure_mobile_v2_SLANet.onnx
+  SHA256: ddfc6c97ee4db2a5e9de4de8b6a14508a39d42d228503219fdfebfac364885e3
+
+slanet_plus:
+  model_dir_or_path: https://www.modelscope.cn/models/RapidAI/RapidTable/resolve/v2.0.0/slanet-plus.onnx
+  SHA256: d57a942af6a2f57d6a4a0372573c696a2379bf5857c45e2ac69993f3b334514b
+
+unitable:
+  model_dir_or_path: https://www.modelscope.cn/models/RapidAI/RapidTable/resolve/v2.0.0/unitable
+  SHA256:
+    encoder.pth: 2c66b3c6a3d1c86a00985bab2cd79412fc2b668ff39d338bc3c63d383b08684d
+    decoder.pth: fa342ef3de259576a01a5545ede804208ef35a124935e30df4768e6708dcb6cb
+    vocab.json: 05037d02c48d106639bc90284aa847e5e2151d4746b3f5efe1628599efbd668a
+
+unet:
+  model_dir_or_path: https://www.modelscope.cn/models/RapidAI/RapidTable/resolve/master/unet.onnx
+  SHA256: 0ea48d3a17e35ef5c2e498a5e799566073234d39b1079ca21d9f4fafe73c6d20
+
+paddle_cls:
+  model_dir_or_path: https://www.modelscope.cn/models/RapidAI/RapidTable/resolve/master/table_cls/paddle_cls.onnx
+  SHA256: 21c801f0c403cf960f9f1ccaecf506585b3b98421208033755b9e67cd2371492
+
+q_cls:
+  model_dir_or_path: https://www.modelscope.cn/models/RapidAI/RapidTable/resolve/master/table_cls/q_cls.onnx
+  SHA256: ef940037471c49f5d35ba2b1d9df9a19eabddf03f1689026d2a5bcab5efe577b

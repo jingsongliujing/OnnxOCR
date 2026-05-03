@@ -4,6 +4,7 @@ import copy
 from . import predict_det
 from . import predict_cls
 from . import predict_rec
+from .orientation import RapidOrientationClassifier
 from .utils import get_rotate_crop_image, get_minarea_rect_crop
 
 
@@ -14,7 +15,10 @@ class TextSystem(object):
         self.use_angle_cls = args.use_angle_cls
         self.drop_score = args.drop_score
         if self.use_angle_cls:
-            self.text_classifier = predict_cls.TextClassifier(args)
+            if getattr(args, "use_rapid_orientation", True):
+                self.text_classifier = RapidOrientationClassifier(args)
+            else:
+                self.text_classifier = predict_cls.TextClassifier(args)
 
         self.args = args
         self.crop_image_res_index = 0

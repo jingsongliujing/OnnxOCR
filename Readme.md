@@ -1,75 +1,90 @@
+# OnnxOCR
 
-English | [简体中文](./Readme_cn.md) |
+If this project helps you, please consider giving it a **Star**.
 
-### **OnnxOCR**  
-### ![onnx_logo](onnxocr/test_images/onnxocr_logo.png)  
+![onnx_logo](onnxocr/test_images/onnxocr_logo.png)
 
-**A High-Performance Multilingual OCR Engine Based on ONNX**  
+**A high-performance multilingual OCR project based on ONNXRuntime**
 
-[![GitHub Stars](https://img.shields.io/github/stars/jingsongliujing/OnnxOCR?style=social&label=Star&maxAge=3600)](https://github.com/jingsongliujing/OnnxOCR/stargazers)  
-[![GitHub Forks](https://img.shields.io/github/forks/jingsongliujing/OnnxOCR?style=social&label=Fork&maxAge=3600)](https://github.com/jingsongliujing/OnnxOCR/network/members)  
-[![GitHub License](https://img.shields.io/github/license/jingsongliujing/OnnxOCR)](https://github.com/jingsongliujing/OnnxOCR/blob/main/LICENSE)  
-[![Python Version](https://img.shields.io/badge/Python-%E2%89%A53.6-blue.svg)](https://www.python.org/)  
+![GitHub stars](https://img.shields.io/github/stars/jingsongliujing/OnnxOCR?style=social)
+![GitHub forks](https://img.shields.io/github/forks/jingsongliujing/OnnxOCR?style=social)
+![GitHub license](https://img.shields.io/github/license/jingsongliujing/OnnxOCR)
+![Python Version](https://img.shields.io/badge/python-%3E%3D3.8-blue.svg)
 
+English | [简体中文](./Readme_cn.md)
 
-## 🚀 Version Updates  
+## Version Updates
+
 - **2026.05.01**
   1. Added ONNX license plate detection and recognition.
   2. Added RapidTable-based ONNX table recognition.
   3. Added RapidLayout-based Chinese and English layout analysis.
-  4. Added `use_plate_recognition`, `use_table_recognition`, and `use_layout_analysis` to `ONNXPaddleOcr`; all default to `False`, so existing general OCR usage is unchanged.
-  5. Added `/plate`, `/plate_api`, `/table`, `/table_api`, `/layout`, and `/layout_api` HTTP endpoints.
+  4. Added RapidDoc-based document layout analysis and Markdown export.
+  5. Added `/plate`, `/table`, `/layout`, `/layout_markdown`, and related HTTP endpoints.
 
-- **2025.05.21**  
-  1. Added PP-OCRv5 model, supporting 5 language types in a single model: Simplified Chinese, Traditional Chinese, Chinese Pinyin, English, and Japanese.  
-  2. Overall recognition accuracy improved by 13% compared to PP-OCRv4.  
-  3. Accuracy is consistent with PaddleOCR 3.0.  
+- **2025.05.21**
+  1. Added PP-OCRv5 models, supporting Simplified Chinese, Traditional Chinese, Chinese Pinyin, English, and Japanese in one model.
+  2. Improved overall recognition accuracy compared with PP-OCRv4.
+  3. Recognition accuracy is consistent with PaddleOCR 3.0.
 
+## Core Advantages
 
-## 🌟 Core Advantages  
-1. **Deep Learning Framework-Free**: A universal OCR engine ready for direct deployment.  
-2. **Cross-Architecture Support**: Uses PaddleOCR-converted ONNX models, rebuilt for deployment on both ARM and x86 architecture computers with unchanged accuracy under limited computing power.  
-3. **High-Performance Inference**: Faster inference speed on computers with the same performance.  
-4. **Multilingual Support**: Single model supports 5 language types: Simplified Chinese, Traditional Chinese, Chinese Pinyin, English, and Japanese.  
-5. **Model Accuracy**: Consistent with PaddleOCR models.  
-6. **Domestic Hardware Adaptation**: Restructured code architecture for easy adaptation to more domestic GPUs by modifying only the inference engine.  
+1. **Deep learning framework free**: a general OCR project ready for deployment.
+2. **Cross-architecture support**: PaddleOCR-converted ONNX models can run on ARM and x86 devices.
+3. **Unified inference engine**: all ONNX models create ONNXRuntime sessions through `onnxocr/inference_engine.py`.
+4. **Multilingual support**: one model supports 5 text types.
+5. **Source-level integration**: `rapid_layout`, `rapid_table`, and `rapid_doc` live under the `onnxocr/` package, with no dependency on `rapidocr==3.4.3` or `rapid-orientation`.
+6. **Hardware adaptation friendly**: downstream vendors can adapt GPU/NPU providers by modifying the unified inference engine.
 
+## Environment Setup
 
-## 🛠️ Environment Setup  
-```bash  
-python>=3.6  
-
-pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt  
-```  
-
-**Note**:  
-- The Mobile version model is used by default; the PP-OCRv5_Server-ONNX model offers better performance.  
-- The Mobile model is already in `onnxocr/models/ppocrv5` and requires no download;  
-- The PP-OCRv5_Server-ONNX model is large and uploaded to [Baidu Netdisk](https://pan.baidu.com/s/1hpENH_SkLDdwXkmlsX0GUQ?pwd=wu8t) (extraction code: wu8t). After downloading, place the `det` and `rec` models in `./models/ppocrv5/` to replace the existing ones.  
-
-
-## 🚀 One-Click Run  
-```bash  
-python test_ocr.py  
-```  
-
-`test_ocr.py` now includes general OCR, license plate OCR, table recognition, and layout analysis examples.
-
-
-## 🚗 License Plate Recognition
-License plate recognition is integrated into `ONNXPaddleOcr` as an optional mode. Existing code keeps using the general OCR pipeline:
-
-```python
-from onnxocr.onnx_paddleocr import ONNXPaddleOcr
-
-general_model = ONNXPaddleOcr(use_angle_cls=True, use_gpu=False)
-general_result = general_model.ocr(img)
+```bash
+python>=3.8
+pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
 ```
 
-Enable license plate recognition by setting `use_plate_recognition=True`:
+Notes:
+
+- The Mobile model is used by default.
+- Mobile models are already stored in `onnxocr/models/ppocrv5`.
+- Larger PP-OCRv5 Server ONNX models can be downloaded separately and used to replace det/rec models under `onnxocr/models/ppocrv5/`.
+
+## One-Click Run
+
+```bash
+python test_ocr.py
+```
+
+Feature-specific tests:
+
+```bash
+python tests/test_general_ocr.py
+python tests/test_license_plate_ocr.py
+python tests/test_table_ocr.py
+python tests/test_layout_analysis.py
+python tests/test_layout_markdown.py
+```
+
+Generated files are written to `result_img/`, which is ignored by git.
+
+## General OCR
 
 ```python
+import cv2
 from onnxocr.onnx_paddleocr import ONNXPaddleOcr
+
+img = cv2.imread("onnxocr/test_images/715873facf064583b44ef28295126fa7.jpg")
+model = ONNXPaddleOcr(use_angle_cls=True, use_gpu=False)
+result = model.ocr(img)
+print(result)
+```
+
+## License Plate Recognition
+
+License plate recognition is integrated into `ONNXPaddleOcr` as an optional mode. Existing general OCR usage is unchanged.
+
+```python
+from onnxocr.onnx_paddleocr import ONNXPaddleOcr, sav2PlateImg
 
 plate_model = ONNXPaddleOcr(
     use_angle_cls=True,
@@ -78,116 +93,22 @@ plate_model = ONNXPaddleOcr(
     plate_min_score=0.4,
 )
 plate_result = plate_model.ocr(img)
-```
-
-License plate visualization:
-
-```python
-from onnxocr.onnx_paddleocr import sav2PlateImg
-
 sav2PlateImg(img, plate_result, name="./result_img/test_plate_vis.jpg")
 ```
 
-### Parameters
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `use_plate_recognition` | `False` | Enables license plate detection and recognition when set to `True`. |
-| `plate_min_score` | `0.4` | Minimum confidence threshold for plate detection. |
-| `plate_iou_thresh` | `0.5` | NMS IoU threshold for plate detection. |
-| `plate_detect_model_path` | built-in model path | Optional custom plate detection ONNX model path. |
-| `plate_rec_model_path` | built-in model path | Optional custom plate recognition ONNX model path. |
-| `plate_providers` | `["CPUExecutionProvider"]` | Optional ONNX Runtime providers for plate models. |
+Model files:
 
-### Model Files
 ```text
 onnxocr/models/license_plate/car_plate_detect.onnx
 onnxocr/models/license_plate/plate_rec.onnx
 ```
 
-### Result Format
-```json
-[
-  {
-    "cls": "plate",
-    "axis": [239, 508, 298, 574],
-    "score": 0.9027,
-    "plate": "浙B2V9L7",
-    "type": "single_layer",
-    "landmarks": [[240.73, 509.77], [298.16, 536.68], [297.6, 573.88], [240.76, 546.85]]
-  }
-]
-```
+## Table Recognition
 
-
-## 🔧 Inference Engine Adaptation
-General OCR, license plate recognition, table recognition, and layout analysis all create ONNXRuntime sessions through `onnxocr/inference_engine.py`. To adapt a downstream vendor GPU/NPU, update `build_providers()` or `create_session()` in that file instead of changing each business module separately.
-
-
-## 🧩 Chinese / English Layout Analysis
-Layout analysis is integrated from RapidLayout. It locates document layout elements such as titles, text blocks, tables, figures, headers, and footers.
+Table recognition is integrated from RapidTable. It reuses general OCR detection/recognition results, restores table structure, and outputs HTML, cell boxes, and logical row/column coordinates.
 
 ```python
-from onnxocr.onnx_paddleocr import ONNXPaddleOcr
-
-layout_model = ONNXPaddleOcr(
-    use_gpu=False,
-    use_layout_analysis=True,
-    layout_model_type="pp_layout_cdla",
-)
-layout_result = layout_model.ocr(img)
-```
-
-English layout model:
-
-```python
-layout_model = ONNXPaddleOcr(
-    use_gpu=False,
-    use_layout_analysis=True,
-    layout_model_type="pp_layout_publaynet",
-)
-```
-
-Layout visualization:
-
-```python
-from onnxocr.onnx_paddleocr import sav2LayoutImg
-
-sav2LayoutImg(img, layout_result, name="./result_img/test_layout_vis.jpg")
-```
-
-### Parameters
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `use_layout_analysis` | `False` | Enables layout analysis when set to `True`. |
-| `layout_model_type` | `pp_layout_cdla` | Layout model type. Supported: `pp_layout_cdla` for Chinese and `pp_layout_publaynet` for English. |
-| `layout_model_path` | built-in model path | Optional custom layout ONNX model path. |
-| `layout_conf_thresh` | `0.5` | Detection confidence threshold. |
-| `layout_iou_thresh` | `0.5` | NMS IoU threshold. |
-| `layout_engine_cfg` | `{}` | Optional RapidLayout ONNXRuntime engine config. |
-
-### Model Files
-```text
-onnxocr/models/layout/layout_cdla.onnx
-onnxocr/models/layout/layout_publaynet.onnx
-```
-
-### Result Format
-```json
-{
-  "boxes": [[10.0, 20.0, 120.0, 80.0]],
-  "class_names": ["title"],
-  "scores": [0.95],
-  "processing_time": 0.18,
-  "model_type": "pp_layout_cdla"
-}
-```
-
-
-## 📊 Table Recognition
-Table recognition is integrated from RapidTable and reuses OnnxOCR text detection/recognition results to restore table HTML.
-
-```python
-from onnxocr.onnx_paddleocr import ONNXPaddleOcr
+from onnxocr.onnx_paddleocr import ONNXPaddleOcr, sav2TableImg
 
 table_model = ONNXPaddleOcr(
     use_angle_cls=True,
@@ -197,239 +118,173 @@ table_model = ONNXPaddleOcr(
 )
 table_result = table_model.ocr(img)
 print(table_result["html"])
-```
-
-Table visualization:
-
-```python
-from onnxocr.onnx_paddleocr import sav2TableImg
-
 sav2TableImg(img, table_result, name="./result_img/test_table_vis.jpg")
 ```
 
-### Parameters
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `use_table_recognition` | `False` | Enables table structure recognition when set to `True`. |
-| `table_model_type` | `slanet_plus` | Table model type. Supported: `slanet_plus`, `ppstructure_zh`, `ppstructure_en`. |
-| `table_model_path` | built-in model path | Optional custom table ONNX model path. |
-| `table_engine_cfg` | `{}` | Optional ONNXRuntime engine config for RapidTable. |
+Model files:
 
-### Model Files
 ```text
 onnxocr/models/table/slanet-plus.onnx
 onnxocr/models/table/ch_ppstructure_mobile_v2_SLANet.onnx
 onnxocr/models/table/en_ppstructure_mobile_v2_SLANet.onnx
 ```
 
-### Result Format
-```json
-{
-  "html": "<html><body><table>...</table></body></html>",
-  "cell_bboxes": [[10.0, 20.0, 80.0, 40.0]],
-  "logic_points": [[0, 0, 0, 0]],
-  "processing_time": 0.28,
-  "model_type": "slanet_plus"
-}
+## Chinese / English Layout Analysis
+
+Layout analysis is integrated from RapidLayout. It locates document elements such as titles, text blocks, tables, figures, headers, and footers.
+
+```python
+from onnxocr.onnx_paddleocr import ONNXPaddleOcr, sav2LayoutImg
+
+layout_model = ONNXPaddleOcr(
+    use_gpu=False,
+    use_layout_analysis=True,
+    layout_model_type="pp_layout_cdla",
+)
+layout_result = layout_model.ocr(img)
+sav2LayoutImg(img, layout_result, name="./result_img/test_layout_vis.jpg")
 ```
 
+For English layout analysis, set `layout_model_type` to `pp_layout_publaynet`.
 
-## 📡 API Service (CPU Example)  
-### Start Service  
-```bash  
-python app-service.py  
-```  
+Model files:
 
-### Test Example  
-#### Request  
-```bash  
-curl -X POST http://localhost:5005/ocr \  
--H "Content-Type: application/json" \  
--d '{"image": "base64_encoded_image_data"}'  
-```  
+```text
+onnxocr/models/layout/layout_cdla.onnx
+onnxocr/models/layout/layout_publaynet.onnx
+```
 
-#### Response  
-```json  
-{  
-  "processing_time": 0.456,  
-  "results": [  
-    {  
-      "text": "Name",  
-      "confidence": 0.9999361634254456,  
-      "bounding_box": [[4.0, 8.0], [31.0, 8.0], [31.0, 24.0], [4.0, 24.0]]  
-    },  
-    {  
-      "text": "Header",  
-      "confidence": 0.9998759031295776,  
-      "bounding_box": [[233.0, 7.0], [258.0, 7.0], [258.0, 23.0], [233.0, 23.0]]  
-    }  
-  ]  
-}  
-```  
+## Document To Markdown
 
-### License Plate API
-`app-service.py` provides `/plate`, and `webui.py` provides `/plate_api`. Both endpoints accept the same base64 JSON format as the general OCR API.
+Document-to-Markdown export is integrated from RapidDoc. It analyzes titles, paragraphs, tables, figures, and other layout elements, then saves the result as a Markdown file.
 
-#### Request
+```python
+from onnxocr.layout_markdown import LayoutMarkdownConverter
+
+converter = LayoutMarkdownConverter(
+    layout_model_type="pp_doclayoutv2",
+    formula_enable=False,
+    table_enable=True,
+)
+result = converter.convert_file(
+    "onnxocr/test_images/layout_cdla.jpg",
+    output_md_path="./result_img/test_layout_markdown.md",
+)
+print(result["markdown_path"])
+```
+
+RapidDoc model files:
+
+```text
+onnxocr/models/rapid_doc/layout/pp_doclayoutv2.onnx
+onnxocr/models/rapid_doc/table/q_cls.onnx
+onnxocr/models/rapid_doc/table/unet.onnx
+onnxocr/models/rapid_doc/table/slanet-plus.onnx
+```
+
+## Inference Engine Adaptation
+
+General OCR, license plate recognition, table recognition, layout analysis, and RapidDoc document parsing all create ONNXRuntime sessions through `onnxocr/inference_engine.py`.
+
+To adapt a downstream GPU/NPU provider, start from:
+
+```python
+from onnxocr.inference_engine import create_session
+```
+
+Main extension points:
+
+- `create_session(model_path, providers=None, use_gpu=False, gpu_id=0, sess_options=None)`
+- `build_providers(use_gpu=False, gpu_id=0, providers=None)`
+- `build_providers_from_engine_cfg(engine_cfg)`
+- `ProviderConfig(engine_cfg)`
+
+Only `onnxocr/inference_engine.py` imports `onnxruntime` directly. Feature modules do not call ONNXRuntime APIs directly.
+
+## API Service
+
+Start service:
+
 ```bash
-curl -X POST http://localhost:5005/plate \
--H "Content-Type: application/json" \
--d '{"image": "base64_encoded_image_data", "min_score": 0.4}'
+python app-service.py
 ```
 
-To return a visualization image as base64, add `visualize`:
+Main endpoints:
 
-```json
-{"image": "base64_encoded_image_data", "min_score": 0.4, "visualize": true}
-```
+- `/ocr`: general OCR.
+- `/plate`: license plate recognition.
+- `/table`: table recognition.
+- `/layout`: layout analysis.
+- `/layout_markdown`: image/PDF to Markdown.
 
-#### Response
-```json
-{
-  "processing_time": 0.158,
-  "results": [
-    {
-      "cls": "plate",
-      "axis": [239, 508, 298, 574],
-      "score": 0.9027,
-      "plate": "浙B2V9L7",
-      "type": "single_layer",
-      "landmarks": [[240.73, 509.77], [298.16, 536.68], [297.6, 573.88], [240.76, 546.85]]
-    }
-  ]
-}
-```
+WebUI:
 
-### Table Recognition API
-`app-service.py` provides `/table`, and `webui.py` provides `/table_api`.
-
-#### Request
 ```bash
-curl -X POST http://localhost:5005/table \
--H "Content-Type: application/json" \
--d '{"image": "base64_encoded_image_data"}'
+python webui.py
 ```
 
-To return a visualization image as base64, add `visualize`. To also draw table logical row/column indexes, pass `show_logic`:
+## Docker Image
 
-```json
-{"image": "base64_encoded_image_data", "visualize": true, "show_logic": true}
-```
-
-#### Response
-```json
-{
-  "html": "<html><body><table>...</table></body></html>",
-  "cell_bboxes": [[10.0, 20.0, 80.0, 40.0]],
-  "logic_points": [[0, 0, 0, 0]],
-  "processing_time": 0.28,
-  "model_type": "slanet_plus"
-}
-```
-
-### Layout Analysis API
-`app-service.py` provides `/layout`, and `webui.py` provides `/layout_api`.
-
-#### Request
 ```bash
-curl -X POST http://localhost:5005/layout \
--H "Content-Type: application/json" \
--d '{"image": "base64_encoded_image_data", "model_type": "pp_layout_cdla", "visualize": true}'
+docker build -t ocr-service .
+docker run -itd --name onnxocr-service -p 5006:5005 ocr-service
 ```
 
-For English layout analysis, set `model_type` to `pp_layout_publaynet`.
+## Project Layout
 
-#### Response
-```json
-{
-  "boxes": [[10.0, 20.0, 120.0, 80.0]],
-  "class_names": ["title"],
-  "scores": [0.95],
-  "processing_time": 0.18,
-  "model_type": "pp_layout_cdla",
-  "visualization": "base64_encoded_jpg"
-}
+```text
+onnxocr/
+  inference_engine.py        # single ONNXRuntime entry
+  onnx_paddleocr.py          # public user API
+  predict_det.py             # general OCR detection
+  predict_rec.py             # general OCR recognition
+  orientation.py             # local RapidOrientation ONNX adapter
+  license_plate.py           # license plate OCR
+  table_recognition.py       # table recognition wrapper
+  layout_recognition.py      # layout analysis wrapper
+  layout_markdown.py         # RapidDoc Markdown wrapper
+  rapid_layout/              # source-level RapidLayout ONNX integration
+  rapid_table/               # source-level RapidTable ONNX integration
+  rapid_doc/                 # source-level RapidDoc ONNX integration
+  models/                    # local ONNX models
+tests/                       # feature-specific tests
 ```
 
+## Effect Demonstration
 
-## 🐳 Docker Image Environment (CPU)  
-### Build Image  
-```bash  
-docker build -t ocr-service .  
-```  
+| Example 1 | Example 2 |
+|-----------|-----------|
+| ![](result_img/r1.png) | ![](result_img/r2.png) |
 
-### Run Image  
-```bash  
-docker run -itd --name onnxocr-service-v3 -p 5006:5005 onnxocr-service:v3  
-```  
+| Example 3 | Example 4 |
+|-----------|-----------|
+| ![](result_img/r3.png) | ![](result_img/draw_ocr4.jpg) |
 
-### POST Request  
-```  
-url: ip:5006/ocr  
-```  
+## Contact & Communication
 
-### Response Example  
-```json  
-{  
-  "processing_time": 0.456,  
-  "results": [  
-    {  
-      "text": "Name",  
-      "confidence": 0.9999361634254456,  
-      "bounding_box": [[4.0, 8.0], [31.0, 8.0], [31.0, 24.0], [4.0, 24.0]]  
-    },  
-    {  
-      "text": "Header",  
-      "confidence": 0.9998759031295776,  
-      "bounding_box": [[233.0, 7.0], [258.0, 7.0], [258.0, 23.0], [233.0, 23.0]]  
-    }  
-  ]  
-}  
-```  
+### OnnxOCR Community
 
+![WeChat Group](onnxocr/test_images/微信群.jpg)
 
-## 🌟 Effect Demonstration  
-| Example 1 | Example 2 |  
-|-----------|-----------|  
-| ![](result_img/r1.png) | ![](result_img/r2.png) |  
+![QQ Group](onnxocr/test_images/QQ群.jpg)
 
-| Example 3 | Example 4 |  
-|-----------|-----------|  
-| ![](result_img/r3.png) | ![](result_img/draw_ocr4.jpg) |  
+## Acknowledgments
 
-| Example 5 | Example 6 |  
-|-----------|-----------|  
-| ![](result_img/draw_ocr5.jpg) | ![](result_img/555.png) |  
+Thanks to [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) for technical support and model references.
 
+Thanks to the [RapidAI](https://github.com/RapidAI) open-source community, including [RapidTable](https://github.com/RapidAI/RapidTable), [RapidLayout](https://github.com/RapidAI/RapidLayout), [RapidDoc](https://github.com/RapidAI/RapidDoc), and [RapidOrientation](https://github.com/RapidAI/RapidOrientation), for excellent models, code, and engineering references.
 
-## 👨💻 Contact & Communication  
-### Career Opportunities  
-I am currently seeking job opportunities. Welcome to connect!  
-![WeChat QR Code](onnxocr/test_images/myQR.jpg)  
+## Open Source & Donations
 
-### OnnxOCR Community  
-#### WeChat Group  
-![WeChat Group](onnxocr/test_images/微信群.jpg)  
-
-#### QQ Group  
-![QQ Group](onnxocr/test_images/QQ群.jpg)  
-
-
-## 🎉 Acknowledgments  
-Thanks to [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) for technical support!  
-Thanks to [RapidLayout](https://github.com/RapidAI/RapidLayout) for layout analysis models and code references!
-
-
-## 🌍 Open Source & Donations  
-I am passionate about open source and AI technology, believing they can bring convenience and help to those in need, making the world a better place. If you recognize this project, you can support it via Alipay or WeChat Pay (please note "Support OnnxOCR" in the remarks).  
+If you recognize this project, you can support it via Alipay or WeChat Pay.
 
 <img src="onnxocr/test_images/weixin_pay.jpg" alt="WeChat Pay" width="200">
 <img src="onnxocr/test_images/zhifubao_pay.jpg" alt="Alipay" width="200">
 
+## Star History
 
-## 📈 Star History  
-[![Star History Chart](https://api.star-history.com/svg?repos=jingsongliujing/OnnxOCR&type=Date)](https://star-history.com/#jingsongliujing/OnnxOCR&Date)  
+[![Star History Chart](https://api.star-history.com/svg?repos=jingsongliujing/OnnxOCR&type=Date)](https://star-history.com/#jingsongliujing/OnnxOCR&Date)
 
+## Contribution Guidelines
 
-## 🤝 Contribution Guidelines  
-Welcome to submit Issues and Pull Requests to improve the project together!  
+Issues and Pull Requests are welcome.
