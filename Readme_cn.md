@@ -13,8 +13,9 @@
 - **2026.05.01**
   1. 新增 ONNX 车牌检测与车牌号识别能力。
   2. 新增基于 RapidTable 的 ONNX 表格识别能力。
-  3. `ONNXPaddleOcr` 新增 `use_plate_recognition` 和 `use_table_recognition` 参数，默认值均为 `False`，原有通用 OCR 调用方式不受影响。
-  4. 新增 `/plate`、`/plate_api`、`/table` 和 `/table_api` HTTP 接口。
+  3. 新增基于 RapidLayout 的中英文版面分析能力。
+  4. `ONNXPaddleOcr` 新增 `use_plate_recognition`、`use_table_recognition` 和 `use_layout_analysis` 参数，默认值均为 `False`，原有通用 OCR 调用方式不受影响。
+  5. 新增 `/plate`、`/plate_api`、`/table`、`/table_api`、`/layout` 和 `/layout_api` HTTP 接口。
 
 - **2025.05.21**  
   1. 新增 PP-OCRv5 模型，单模型支持 5 种文字类型：简体中文、繁体中文、中文拼音、英文和日文。  
@@ -50,7 +51,7 @@ pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
 python test_ocr.py  
 ```  
 
-`test_ocr.py` 已包含通用 OCR 和车牌识别两种示例。
+`test_ocr.py` 已包含通用 OCR、车牌识别、表格识别和版面分析示例。
 
 
 ## 🚗 车牌识别
@@ -75,6 +76,14 @@ plate_model = ONNXPaddleOcr(
     plate_min_score=0.4,
 )
 plate_result = plate_model.ocr(img)
+```
+
+车牌识别可视化：
+
+```python
+from onnxocr.onnx_paddleocr import sav2PlateImg
+
+sav2PlateImg(img, plate_result, name="./result_img/test_plate_vis.jpg")
 ```
 
 ### 参数说明
@@ -112,6 +121,65 @@ onnxocr/models/license_plate/plate_rec.onnx
 项目中的通用 OCR、车牌识别、表格识别都通过 `onnxocr/inference_engine.py` 创建 ONNXRuntime session。后续如果要适配下游厂商 GPU/NPU，国产化显卡（寒武纪、海光、华为昇腾）一般只需要在这个文件中调整 `build_providers()` 或 `create_session()`，业务推理模块不需要分别修改。
 
 
+## 🧩 中英文版面分析
+版面分析从 RapidLayout 拆出并融合到 OnnxOCR 中，用于定位文档图片中的标题、正文、表格、图片、页眉页脚等版面元素。
+
+```python
+from onnxocr.onnx_paddleocr import ONNXPaddleOcr
+
+layout_model = ONNXPaddleOcr(
+    use_gpu=False,
+    use_layout_analysis=True,
+    layout_model_type="pp_layout_cdla",
+)
+layout_result = layout_model.ocr(img)
+```
+
+英文版面模型：
+
+```python
+layout_model = ONNXPaddleOcr(
+    use_gpu=False,
+    use_layout_analysis=True,
+    layout_model_type="pp_layout_publaynet",
+)
+```
+
+版面分析可视化：
+
+```python
+from onnxocr.onnx_paddleocr import sav2LayoutImg
+
+sav2LayoutImg(img, layout_result, name="./result_img/test_layout_vis.jpg")
+```
+
+### 参数说明
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| `use_layout_analysis` | `False` | 设置为 `True` 时启用版面分析。 |
+| `layout_model_type` | `pp_layout_cdla` | 版面模型类型，支持 `pp_layout_cdla`（中文）和 `pp_layout_publaynet`（英文）。 |
+| `layout_model_path` | 内置模型路径 | 可选，自定义版面分析 ONNX 模型路径。 |
+| `layout_conf_thresh` | `0.5` | 检测置信度阈值。 |
+| `layout_iou_thresh` | `0.5` | NMS 的 IoU 阈值。 |
+| `layout_engine_cfg` | `{}` | 可选，RapidLayout 的 ONNXRuntime 推理配置。 |
+
+### 模型文件位置
+```text
+onnxocr/models/layout/layout_cdla.onnx
+onnxocr/models/layout/layout_publaynet.onnx
+```
+
+### 返回格式
+```json
+{
+  "boxes": [[10.0, 20.0, 120.0, 80.0]],
+  "class_names": ["title"],
+  "scores": [0.95],
+  "processing_time": 0.18,
+  "model_type": "pp_layout_cdla"
+}
+```
+
 ## 📊 表格识别
 表格识别把 RapidTable 融合到 OnnxOCR 中，会复用当前通用 OCR 的文字检测和识别结果，再进行表格结构还原，最终输出 HTML、单元格框和逻辑行列坐标。
 
@@ -126,6 +194,14 @@ table_model = ONNXPaddleOcr(
 )
 table_result = table_model.ocr(img)
 print(table_result["html"])
+```
+
+表格识别可视化：
+
+```python
+from onnxocr.onnx_paddleocr import sav2TableImg
+
+sav2TableImg(img, table_result, name="./result_img/test_table_vis.jpg")
 ```
 
 ### 参数说明
@@ -198,6 +274,12 @@ curl -X POST http://localhost:5005/plate \
 -d '{"image": "base64_encoded_image_data", "min_score": 0.4}'
 ```
 
+如需返回可视化图片，可增加 `visualize` 参数：
+
+```json
+{"image": "base64_encoded_image_data", "min_score": 0.4, "visualize": true}
+```
+
 #### 响应
 ```json
 {
@@ -225,6 +307,12 @@ curl -X POST http://localhost:5005/table \
 -d '{"image": "base64_encoded_image_data"}'
 ```
 
+如需返回可视化图片，可增加 `visualize` 参数；如需在表格图上显示逻辑行列坐标，可同时传 `show_logic`：
+
+```json
+{"image": "base64_encoded_image_data", "visualize": true, "show_logic": true}
+```
+
 #### 响应
 ```json
 {
@@ -233,6 +321,30 @@ curl -X POST http://localhost:5005/table \
   "logic_points": [[0, 0, 0, 0]],
   "processing_time": 0.28,
   "model_type": "slanet_plus"
+}
+```
+
+### 版面分析 API
+`app-service.py` 提供 `/layout` 接口，`webui.py` 提供 `/layout_api` 接口。
+
+#### 请求
+```bash
+curl -X POST http://localhost:5005/layout \
+-H "Content-Type: application/json" \
+-d '{"image": "base64_encoded_image_data", "model_type": "pp_layout_cdla", "visualize": true}'
+```
+
+英文版面分析可将 `model_type` 改为 `pp_layout_publaynet`。
+
+#### 响应
+```json
+{
+  "boxes": [[10.0, 20.0, 120.0, 80.0]],
+  "class_names": ["title"],
+  "scores": [0.95],
+  "processing_time": 0.18,
+  "model_type": "pp_layout_cdla",
+  "visualization": "base64_encoded_jpg"
 }
 ```
 
@@ -305,6 +417,7 @@ url: ip:5006/ocr
 ## 🎉 致谢  
 非常感谢 [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) 提供的技术支持！  
 非常感谢 [RapidTable](https://github.com/RapidAI/RapidTable) 提供的表格识别模型和代码参考！
+非常感谢 [RapidLayout](https://github.com/RapidAI/RapidLayout) 提供的版面分析模型和代码参考！
 
 
 ## 🌍 开源与捐赠  

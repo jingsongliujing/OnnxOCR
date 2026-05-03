@@ -1,17 +1,24 @@
 import argparse
 import time
 
+from .layout_recognition import LayoutRecognizer
 from .license_plate import LicensePlateRecognizer
 from .predict_system import TextSystem
 from .table_recognition import TableRecognizer
 from .utils import draw_ocr
 from .utils import infer_args as init_args
+from .visualization import (
+    save_layout_visualization,
+    save_plate_visualization,
+    save_table_visualization,
+)
 
 
 class ONNXPaddleOcr(TextSystem):
     def __init__(self, **kwargs):
         self.use_plate_recognition = kwargs.pop("use_plate_recognition", False)
         self.use_table_recognition = kwargs.pop("use_table_recognition", False)
+        self.use_layout_analysis = kwargs.pop("use_layout_analysis", False)
         self.plate_min_score = kwargs.pop("plate_min_score", 0.4)
         self.plate_iou_thresh = kwargs.pop("plate_iou_thresh", 0.5)
         plate_detect_model_path = kwargs.pop("plate_detect_model_path", None)
@@ -20,15 +27,37 @@ class ONNXPaddleOcr(TextSystem):
         table_model_type = kwargs.pop("table_model_type", "slanet_plus")
         table_model_path = kwargs.pop("table_model_path", None)
         table_engine_cfg = kwargs.pop("table_engine_cfg", None)
+        layout_model_type = kwargs.pop("layout_model_type", "pp_layout_cdla")
+        layout_model_path = kwargs.pop("layout_model_path", None)
+        layout_engine_cfg = kwargs.pop("layout_engine_cfg", None)
+        layout_conf_thresh = kwargs.pop("layout_conf_thresh", 0.5)
+        layout_iou_thresh = kwargs.pop("layout_iou_thresh", 0.5)
 
-        if self.use_plate_recognition and self.use_table_recognition:
-            raise ValueError("use_plate_recognition and use_table_recognition cannot both be True.")
+        active_modes = [
+            self.use_plate_recognition,
+            self.use_table_recognition,
+            self.use_layout_analysis,
+        ]
+        if sum(bool(mode) for mode in active_modes) > 1:
+            raise ValueError(
+                "use_plate_recognition, use_table_recognition and use_layout_analysis cannot be enabled together."
+            )
 
         if self.use_plate_recognition:
             self.plate_recognizer = LicensePlateRecognizer(
                 detect_model_path=plate_detect_model_path,
                 rec_model_path=plate_rec_model_path,
                 providers=plate_providers,
+            )
+            return
+
+        if self.use_layout_analysis:
+            self.layout_recognizer = LayoutRecognizer(
+                model_type=layout_model_type,
+                model_path=layout_model_path,
+                engine_cfg=layout_engine_cfg,
+                conf_thresh=layout_conf_thresh,
+                iou_thresh=layout_iou_thresh,
             )
             return
 
@@ -57,6 +86,9 @@ class ONNXPaddleOcr(TextSystem):
                 min_score=self.plate_min_score if plate_min_score is None else plate_min_score,
                 iou_thresh=self.plate_iou_thresh if plate_iou_thresh is None else plate_iou_thresh,
             )
+
+        if self.use_layout_analysis:
+            return self.layout_recognizer.recognize(img)
 
         if self.use_table_recognition:
             ocr_result = self._general_ocr(img, det=True, rec=True, cls=cls)
@@ -111,6 +143,18 @@ def sav2Img(org_img, result, name="draw_ocr.jpg"):
     im_show = draw_ocr(image, boxes, txts, scores)
     im_show = Image.fromarray(im_show)
     im_show.save(name)
+
+
+def sav2PlateImg(org_img, result, name="draw_plate.jpg"):
+    save_plate_visualization(org_img, result, name)
+
+
+def sav2TableImg(org_img, result, name="draw_table.jpg", show_logic=False):
+    save_table_visualization(org_img, result, name, show_logic=show_logic)
+
+
+def sav2LayoutImg(org_img, result, name="draw_layout.jpg"):
+    save_layout_visualization(org_img, result, name)
 
 
 if __name__ == "__main__":

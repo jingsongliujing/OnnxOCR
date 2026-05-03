@@ -4,6 +4,12 @@ import base64
 import numpy as np
 from flask import Flask, request, jsonify,render_template
 from onnxocr.onnx_paddleocr import ONNXPaddleOcr
+from onnxocr.visualization import (
+    draw_layout_analysis,
+    draw_plate_recognition,
+    draw_table_recognition,
+    image_to_base64,
+)
 
 # 初始化 Flask 应用
 app = Flask(__name__)
@@ -12,6 +18,7 @@ app = Flask(__name__)
 model = ONNXPaddleOcr(use_angle_cls=True, use_gpu=False)
 plate_model = None
 table_model = None
+layout_models = {}
 
 
 def get_plate_model():
@@ -26,6 +33,19 @@ def get_table_model():
     if table_model is None:
         table_model = ONNXPaddleOcr(use_angle_cls=True, use_gpu=False, use_table_recognition=True)
     return table_model
+
+
+def get_layout_model(model_type="pp_layout_cdla", conf_thresh=0.5, iou_thresh=0.5):
+    key = (model_type, float(conf_thresh), float(iou_thresh))
+    if key not in layout_models:
+        layout_models[key] = ONNXPaddleOcr(
+            use_layout_analysis=True,
+            use_gpu=False,
+            layout_model_type=model_type,
+            layout_conf_thresh=float(conf_thresh),
+            layout_iou_thresh=float(iou_thresh),
+        )
+    return layout_models[key]
 
 @app.route('/')
 def index():
@@ -104,10 +124,13 @@ def plate_service():
         results = get_plate_model().ocr(img, plate_min_score=min_score)
         processing_time = time.time() - start_time
 
-        return jsonify({
+        response = {
             "processing_time": processing_time,
             "results": results
-        })
+        }
+        if data.get("visualize", False):
+            response["visualization"] = image_to_base64(draw_plate_recognition(img, results))
+        return jsonify(response)
 
     except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
@@ -130,6 +153,38 @@ def table_service():
         result = get_table_model().ocr(img)
         processing_time = time.time() - start_time
         result["processing_time"] = processing_time
+        if data.get("visualize", False):
+            result["visualization"] = image_to_base64(
+                draw_table_recognition(img, result, show_logic=data.get("show_logic", False))
+            )
+
+        return jsonify(result)
+
+    except Exception as e:
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+
+
+@app.route('/layout', methods=['POST'])
+def layout_service():
+    try:
+        data = request.get_json()
+        if not data or "image" not in data:
+            return jsonify({"error": "Invalid request, 'image' field is required."}), 400
+
+        image_bytes = base64.b64decode(data["image"])
+        image_np = np.frombuffer(image_bytes, dtype=np.uint8)
+        img = cv2.imdecode(image_np, cv2.IMREAD_COLOR)
+        if img is None:
+            return jsonify({"error": "Failed to decode image from base64."}), 400
+
+        model_type = data.get("model_type", "pp_layout_cdla")
+        conf_thresh = float(data.get("conf_thresh", 0.5))
+        iou_thresh = float(data.get("iou_thresh", 0.5))
+        start_time = time.time()
+        result = get_layout_model(model_type, conf_thresh, iou_thresh).ocr(img)
+        result["processing_time"] = time.time() - start_time
+        if data.get("visualize", False):
+            result["visualization"] = image_to_base64(draw_layout_analysis(img, result))
 
         return jsonify(result)
 

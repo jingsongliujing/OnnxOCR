@@ -3,7 +3,13 @@ import time
 
 import cv2
 
-from onnxocr.onnx_paddleocr import ONNXPaddleOcr, sav2Img
+from onnxocr.onnx_paddleocr import (
+    ONNXPaddleOcr,
+    sav2Img,
+    sav2LayoutImg,
+    sav2PlateImg,
+    sav2TableImg,
+)
 
 
 def run_general_ocr():
@@ -38,6 +44,8 @@ def run_plate_ocr():
     result = plate_model.ocr(img)
     print("plate OCR total time: {:.3f}".format(time.time() - start))
     print("plate OCR result:", result)
+    os.makedirs("./result_img", exist_ok=True)
+    sav2PlateImg(img, result, name="./result_img/test_plate_vis.jpg")
 
 
 def run_table_ocr():
@@ -55,9 +63,30 @@ def run_table_ocr():
     result = table_model.ocr(img)
     print("table OCR total time: {:.3f}".format(time.time() - start))
     print("table OCR html:", result["html"][:500])
+    os.makedirs("./result_img", exist_ok=True)
+    sav2TableImg(img, result, name="./result_img/test_table_vis.jpg")
+
+
+def run_layout_analysis():
+    layout_model = ONNXPaddleOcr(
+        use_gpu=False,
+        use_layout_analysis=True,
+        layout_model_type="pp_layout_cdla",
+    )
+    img = cv2.imread("./onnxocr/test_images/layout_cdla.jpg")
+    if img is None:
+        raise RuntimeError("Failed to read layout analysis test image.")
+
+    start = time.time()
+    result = layout_model.ocr(img)
+    print("layout analysis total time: {:.3f}".format(time.time() - start))
+    print("layout analysis result count:", len(result["boxes"]))
+    os.makedirs("./result_img", exist_ok=True)
+    sav2LayoutImg(img, result, name="./result_img/test_layout_vis.jpg")
 
 
 if __name__ == "__main__":
     run_general_ocr()
     run_plate_ocr()
     run_table_ocr()
+    run_layout_analysis()

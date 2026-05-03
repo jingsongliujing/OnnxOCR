@@ -1,0 +1,47 @@
+pp_doc_layoutv3:
+  model_dir_or_path: https://www.modelscope.cn/models/RapidAI/RapidLayout/resolve/v1.2.0/onnx/pp_doc_layout/pp_doc_layoutv3.onnx
+  SHA256: 250dbad1dfb9e4983fab75e1bf5085cd56ec3f41d5c7d0f8623ec74856e7aa67
+
+pp_doc_layoutv2:
+  model_dir_or_path: https://www.modelscope.cn/models/RapidAI/RapidLayout/resolve/v1.2.0/onnx/pp_doc_layout/pp_doc_layoutv2.onnx
+  SHA256: 0bd2ea0997fe0789f0300292291f8bbf897d890b44a9a3bd5be72afd6198aa90
+
+pp_layout_cdla:
+  model_dir_or_path: https://www.modelscope.cn/models/RapidAI/RapidLayout/resolve/v1.2.0/onnx/pp_layout/layout_cdla.onnx
+  SHA256: 25b1f27ec56aa932a48f30cbd6293c358a156280f4b20b0a973bab210c39f62c
+
+pp_layout_publaynet:
+  model_dir_or_path: https://www.modelscope.cn/models/RapidAI/RapidLayout/resolve/v1.2.0/onnx/pp_layout/layout_publaynet.onnx
+  SHA256: 958aa6dcef1cc1a542d0a513b5976a3d5edbcc37d76460ec1e9f126358e4d100
+
+pp_layout_table:
+  model_dir_or_path: https://www.modelscope.cn/models/RapidAI/RapidLayout/resolve/v1.2.0/onnx/pp_layout/layout_table.onnx
+  SHA256: 5b07ba6df1d1889bed2877c9d7501235c6fb6e2212aca8f2f56f4b1b8d0e37b5
+
+yolov8n_layout_paper:
+  model_dir_or_path: https://www.modelscope.cn/models/RapidAI/RapidLayout/resolve/v1.2.0/onnx/360/yolov8n_layout_paper.onnx
+  SHA256: bc074c8d8fbe89e5d90c3e21b7e3b52f279c70fe210ae96d73b74141df64347c
+
+yolov8n_layout_report:
+  model_dir_or_path: https://www.modelscope.cn/models/RapidAI/RapidLayout/resolve/v1.2.0/onnx/360/yolov8n_layout_report.onnx
+  SHA256: 9d5ada6a69b5825eb255da2b82d2c8d11636a0adae801074d88892527b535980
+
+yolov8n_layout_publaynet:
+  model_dir_or_path: https://www.modelscope.cn/models/RapidAI/RapidLayout/resolve/v1.2.0/onnx/360/yolov8n_layout_publaynet.onnx
+  SHA256: 5304bf18e538312a1bd211eb2ad3283524dff956e5cbffcefb3ad294c6e3cba6
+
+yolov8n_layout_general6:
+  model_dir_or_path: https://www.modelscope.cn/models/RapidAI/RapidLayout/resolve/v1.2.0/onnx/360/yolov8n_layout_general6.onnx
+  SHA256: 927b6edcb268e896e6a170f7d78980591b408e04b3908f54d58eb69efd018c95
+
+doclayout_docstructbench:
+  model_dir_or_path: https://www.modelscope.cn/models/RapidAI/RapidLayout/resolve/v1.2.0/onnx/doclayout/doclayout_yolo_docstructbench_imgsz1024.onnx
+  SHA256: 3b452baef10ecabd615491bc82cc4d49475fbc2cd7a8e535044f2c6bb28fb9fe
+
+doclayout_d4la:
+  model_dir_or_path: https://www.modelscope.cn/models/RapidAI/RapidLayout/resolve/v1.2.0/onnx/doclayout/doclayout_yolo_d4la_imgsz1600_docsynth_pretrain.onnx
+  SHA256: 1c81715d45d5bee2e6b644f92563a9eaa5cb4cad3d4293f890f99c0862937e69
+
+doclayout_docsynth:
+  model_dir_or_path: https://www.modelscope.cn/models/RapidAI/RapidLayout/resolve/v1.2.0/onnx/doclayout/doclayout_yolo_doclaynet_imgsz1120_docsynth_pretrain.onnx
+  SHA256: 527e60cefc2801dec727dddbfa3a2bd225876a8c5505461c9d3b1193f50a7c84

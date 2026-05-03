@@ -16,8 +16,9 @@ English | [简体中文](./Readme_cn.md) |
 - **2026.05.01**
   1. Added ONNX license plate detection and recognition.
   2. Added RapidTable-based ONNX table recognition.
-  3. Added `use_plate_recognition` and `use_table_recognition` to `ONNXPaddleOcr`; both default to `False`, so existing general OCR usage is unchanged.
-  4. Added `/plate`, `/plate_api`, `/table`, and `/table_api` HTTP endpoints.
+  3. Added RapidLayout-based Chinese and English layout analysis.
+  4. Added `use_plate_recognition`, `use_table_recognition`, and `use_layout_analysis` to `ONNXPaddleOcr`; all default to `False`, so existing general OCR usage is unchanged.
+  5. Added `/plate`, `/plate_api`, `/table`, `/table_api`, `/layout`, and `/layout_api` HTTP endpoints.
 
 - **2025.05.21**  
   1. Added PP-OCRv5 model, supporting 5 language types in a single model: Simplified Chinese, Traditional Chinese, Chinese Pinyin, English, and Japanese.  
@@ -52,7 +53,7 @@ pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
 python test_ocr.py  
 ```  
 
-`test_ocr.py` now includes both general OCR and license plate OCR examples.
+`test_ocr.py` now includes general OCR, license plate OCR, table recognition, and layout analysis examples.
 
 
 ## 🚗 License Plate Recognition
@@ -77,6 +78,14 @@ plate_model = ONNXPaddleOcr(
     plate_min_score=0.4,
 )
 plate_result = plate_model.ocr(img)
+```
+
+License plate visualization:
+
+```python
+from onnxocr.onnx_paddleocr import sav2PlateImg
+
+sav2PlateImg(img, plate_result, name="./result_img/test_plate_vis.jpg")
 ```
 
 ### Parameters
@@ -111,7 +120,67 @@ onnxocr/models/license_plate/plate_rec.onnx
 
 
 ## 🔧 Inference Engine Adaptation
-General OCR, license plate recognition, and table recognition all create ONNXRuntime sessions through `onnxocr/inference_engine.py`. To adapt a downstream vendor GPU/NPU, update `build_providers()` or `create_session()` in that file instead of changing each business module separately.
+General OCR, license plate recognition, table recognition, and layout analysis all create ONNXRuntime sessions through `onnxocr/inference_engine.py`. To adapt a downstream vendor GPU/NPU, update `build_providers()` or `create_session()` in that file instead of changing each business module separately.
+
+
+## 🧩 Chinese / English Layout Analysis
+Layout analysis is integrated from RapidLayout. It locates document layout elements such as titles, text blocks, tables, figures, headers, and footers.
+
+```python
+from onnxocr.onnx_paddleocr import ONNXPaddleOcr
+
+layout_model = ONNXPaddleOcr(
+    use_gpu=False,
+    use_layout_analysis=True,
+    layout_model_type="pp_layout_cdla",
+)
+layout_result = layout_model.ocr(img)
+```
+
+English layout model:
+
+```python
+layout_model = ONNXPaddleOcr(
+    use_gpu=False,
+    use_layout_analysis=True,
+    layout_model_type="pp_layout_publaynet",
+)
+```
+
+Layout visualization:
+
+```python
+from onnxocr.onnx_paddleocr import sav2LayoutImg
+
+sav2LayoutImg(img, layout_result, name="./result_img/test_layout_vis.jpg")
+```
+
+### Parameters
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `use_layout_analysis` | `False` | Enables layout analysis when set to `True`. |
+| `layout_model_type` | `pp_layout_cdla` | Layout model type. Supported: `pp_layout_cdla` for Chinese and `pp_layout_publaynet` for English. |
+| `layout_model_path` | built-in model path | Optional custom layout ONNX model path. |
+| `layout_conf_thresh` | `0.5` | Detection confidence threshold. |
+| `layout_iou_thresh` | `0.5` | NMS IoU threshold. |
+| `layout_engine_cfg` | `{}` | Optional RapidLayout ONNXRuntime engine config. |
+
+### Model Files
+```text
+onnxocr/models/layout/layout_cdla.onnx
+onnxocr/models/layout/layout_publaynet.onnx
+```
+
+### Result Format
+```json
+{
+  "boxes": [[10.0, 20.0, 120.0, 80.0]],
+  "class_names": ["title"],
+  "scores": [0.95],
+  "processing_time": 0.18,
+  "model_type": "pp_layout_cdla"
+}
+```
 
 
 ## 📊 Table Recognition
@@ -128,6 +197,14 @@ table_model = ONNXPaddleOcr(
 )
 table_result = table_model.ocr(img)
 print(table_result["html"])
+```
+
+Table visualization:
+
+```python
+from onnxocr.onnx_paddleocr import sav2TableImg
+
+sav2TableImg(img, table_result, name="./result_img/test_table_vis.jpg")
 ```
 
 ### Parameters
@@ -200,6 +277,12 @@ curl -X POST http://localhost:5005/plate \
 -d '{"image": "base64_encoded_image_data", "min_score": 0.4}'
 ```
 
+To return a visualization image as base64, add `visualize`:
+
+```json
+{"image": "base64_encoded_image_data", "min_score": 0.4, "visualize": true}
+```
+
 #### Response
 ```json
 {
@@ -227,6 +310,12 @@ curl -X POST http://localhost:5005/table \
 -d '{"image": "base64_encoded_image_data"}'
 ```
 
+To return a visualization image as base64, add `visualize`. To also draw table logical row/column indexes, pass `show_logic`:
+
+```json
+{"image": "base64_encoded_image_data", "visualize": true, "show_logic": true}
+```
+
 #### Response
 ```json
 {
@@ -235,6 +324,30 @@ curl -X POST http://localhost:5005/table \
   "logic_points": [[0, 0, 0, 0]],
   "processing_time": 0.28,
   "model_type": "slanet_plus"
+}
+```
+
+### Layout Analysis API
+`app-service.py` provides `/layout`, and `webui.py` provides `/layout_api`.
+
+#### Request
+```bash
+curl -X POST http://localhost:5005/layout \
+-H "Content-Type: application/json" \
+-d '{"image": "base64_encoded_image_data", "model_type": "pp_layout_cdla", "visualize": true}'
+```
+
+For English layout analysis, set `model_type` to `pp_layout_publaynet`.
+
+#### Response
+```json
+{
+  "boxes": [[10.0, 20.0, 120.0, 80.0]],
+  "class_names": ["title"],
+  "scores": [0.95],
+  "processing_time": 0.18,
+  "model_type": "pp_layout_cdla",
+  "visualization": "base64_encoded_jpg"
 }
 ```
 
@@ -304,6 +417,7 @@ I am currently seeking job opportunities. Welcome to connect!
 
 ## 🎉 Acknowledgments  
 Thanks to [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) for technical support!  
+Thanks to [RapidLayout](https://github.com/RapidAI/RapidLayout) for layout analysis models and code references!
 
 
 ## 🌍 Open Source & Donations  
