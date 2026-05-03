@@ -45,15 +45,41 @@ pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
 
 Notes:
 
-- The Mobile model is used by default.
-- Mobile models are already stored in `onnxocr/models/ppocrv5`.
-- Larger PP-OCRv5 Server ONNX models can be downloaded separately and used to replace det/rec models under `onnxocr/models/ppocrv5/`.
+- By default, the repository only includes the PP-OCRv5 general OCR model files required by `tests/test_general_ocr.py`.
+- Extra models for license plate recognition, table recognition, layout analysis, orientation classification, and RapidDoc Markdown export are large and should be downloaded on demand from [huggingface](https://huggingface.co/jingsongliu/onnxocr_model/tree/main) or [ModelScope](https://www.modelscope.cn/models/supersong/onnxocr_model/tree/master/models).
+- Larger PP-OCRv5 Server ONNX models can also be downloaded separately and used to replace det/rec models under `onnxocr/models/ppocrv5/`.
+
+## Model Download
+
+Extra models are hosted under the `models/` directory of [supersong/onnxocr_model](https://www.modelscope.cn/models/supersong/onnxocr_model/tree/master/models) or [huggingface](https://huggingface.co/jingsongliu/onnxocr_model/tree/main). Download all optional models with:
+
+```bash
+python scripts/download_models.py
+```
+
+The core ModelScope API is:
+
+```python
+from modelscope import snapshot_download
+
+model_dir = snapshot_download("supersong/onnxocr_model")
+```
+
+The script copies the ModelScope `models/` directory into local `onnxocr/models/` and checks required optional files such as `onnxocr/models/rapid_doc/layout/pp_doclayoutv2.onnx`.
+
+To check local models only:
+
+```bash
+python scripts/download_models.py --check-only
+```
 
 ## One-Click Run
 
 ```bash
 python test_ocr.py
 ```
+
+`test_ocr.py` runs only general OCR by default. The optional examples are commented out; uncomment them after downloading the corresponding models with `python scripts/download_models.py`.
 
 Feature-specific tests:
 
@@ -74,7 +100,7 @@ import cv2
 from onnxocr.onnx_paddleocr import ONNXPaddleOcr
 
 img = cv2.imread("onnxocr/test_images/715873facf064583b44ef28295126fa7.jpg")
-model = ONNXPaddleOcr(use_angle_cls=True, use_gpu=False)
+model = ONNXPaddleOcr(use_angle_cls=False, use_gpu=False)
 result = model.ocr(img)
 print(result)
 ```

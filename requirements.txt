@@ -31,3 +31,4 @@ beautifulsoup4
 pydantic
 matplotlib
 tokenizers
+modelscope

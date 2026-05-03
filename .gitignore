@@ -157,6 +157,12 @@ result_img/
 results/
 uploads/
 
+# Optional models are hosted on ModelScope and can be restored with:
+#   python scripts/download_models.py
+onnxocr/models/*
+!onnxocr/models/ppocrv5/
+!onnxocr/models/ppocrv5/**
+
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
 #  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore

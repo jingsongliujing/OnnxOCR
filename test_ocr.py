@@ -6,11 +6,22 @@ from tests.test_table_ocr import run_table_ocr
 
 
 def run_all():
+    # The repository keeps only the PP-OCRv5 general OCR models by default.
+    # Extra models for license plate OCR, table recognition, layout analysis,
+    # and RapidDoc Markdown export can be downloaded on demand:
+    #
+    #   python scripts/download_models.py
+    #
+    # ModelScope path:
+    #   https://www.modelscope.cn/models/supersong/onnxocr_model/tree/master/models
+    #   https://huggingface.co/jingsongliu/onnxocr_model/tree/main
     run_general_ocr()
-    run_plate_ocr()
-    run_table_ocr()
-    run_layout_analysis()
-    run_layout_markdown()
+
+    # Uncomment the examples below after downloading the corresponding models.
+    # run_plate_ocr()
+    # run_table_ocr()
+    # run_layout_analysis()
+    # run_layout_markdown()
 
 
 if __name__ == "__main__":

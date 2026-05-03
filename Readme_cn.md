@@ -45,15 +45,41 @@ pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
 
 说明：
 
-- 默认使用 Mobile 版本模型。
-- Mobile 模型已放在 `onnxocr/models/ppocrv5`，无需额外下载。
-- PP-OCRv5 Server ONNX 模型较大，可下载后替换 `onnxocr/models/ppocrv5/` 下的 det/rec 模型。
+- 仓库默认只包含 `tests/test_general_ocr.py` 所需的 PP-OCRv5 通用 OCR 模型。
+- 车牌识别、表格识别、版面分析、方向分类、RapidDoc Markdown 导出等扩展模型较大，请按需从 [ModelScope](https://www.modelscope.cn/models/supersong/onnxocr_model/tree/master/models) 下载。
+- PP-OCRv5 Server ONNX 模型也可下载后替换 `onnxocr/models/ppocrv5/` 下的 det/rec 模型。
+
+## 模型下载
+
+扩展模型统一托管在 [supersong/onnxocr_model](https://www.modelscope.cn/models/supersong/onnxocr_model/tree/master/models) 的 `models/` 目录下。需要使用车牌、表格、版面分析或 RapidDoc 时，可运行脚本下载：
+
+```bash
+python scripts/download_models.py
+```
+
+等价的核心代码如下：
+
+```python
+from modelscope import snapshot_download
+
+model_dir = snapshot_download("supersong/onnxocr_model")
+```
+
+脚本会把 ModelScope 仓库中的 `models/` 目录同步到本地 `onnxocr/models/`，并检查 RapidDoc 所需的 `onnxocr/models/rapid_doc/layout/pp_doclayoutv2.onnx` 等关键文件是否存在。
+
+只检查本地模型是否齐全：
+
+```bash
+python scripts/download_models.py --check-only
+```
 
 ## 一键运行
 
 ```bash
 python test_ocr.py
 ```
+
+`test_ocr.py` 默认只运行通用 OCR。车牌识别、表格识别、版面分析、RapidDoc Markdown 导出示例已在文件中注释，下载对应模型后按需取消注释即可。
 
 独立测试文件：
 
@@ -74,7 +100,7 @@ import cv2
 from onnxocr.onnx_paddleocr import ONNXPaddleOcr
 
 img = cv2.imread("onnxocr/test_images/715873facf064583b44ef28295126fa7.jpg")
-model = ONNXPaddleOcr(use_angle_cls=True, use_gpu=False)
+model = ONNXPaddleOcr(use_angle_cls=False, use_gpu=False)
 result = model.ocr(img)
 print(result)
 ```
