@@ -1,269 +1,779 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8" />
-    <title>OCR</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OCR 智能识别 · 通用/车牌/表格</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body, html {
-            height: 100%;
-            font-family: sans-serif;
-            background-color: #ffffff;
-        }
-
-        .container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            padding: 5px 20px 20px 20px;
-        }
-
-        .drop-zone {
-            border: 2px dashed #888;
-            border-radius: 10px;
-            width: 400px;
-            height: 150px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            color: #555;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            margin-bottom: 20px;
-        }
-
-        .drop-zone.dragover {
-            background-color: #f0f0f0;
-        }
-
-        .canvas-container {
-            display: none;
-            gap: 20px;
-            flex-wrap: wrap;
-            justify-content: center;
-            margin-top: 20px;
-        }
-
-        canvas {
-            border: 1px solid #ccc;
-            max-width: 600px;
-            height: auto;
-        }
-
-        /* 加载动画 */
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255, 255, 255, 0.7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            display: none;
-        }
-
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid #ccc;
-            border-top: 5px solid #3498db;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', system-ui; background: #f0f2f5; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .top-bar { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; background: white; padding: 12px 24px; border-radius: 60px; margin-bottom: 24px; }
+        .model-group { display: flex; gap: 8px; align-items: center; }
+        select, button { padding: 6px 16px; border-radius: 40px; border: 1px solid #ccc; cursor: pointer; }
+        button { background: #2c7da0; color: white; border: none; }
+        button:hover { opacity: 0.9; }
+        .drop-zone { border: 2px dashed #aaa; border-radius: 20px; padding: 40px; text-align: center; background: white; margin-bottom: 24px; cursor: pointer; transition: 0.2s; }
+        .drop-zone.dragover { background: #e6f7ff; border-color: #1890ff; }
+        .flex-row { display: flex; gap: 20px; flex-wrap: wrap; }
+        .image-panel { flex: 1.2; background: white; border-radius: 20px; padding: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+        .text-panel { flex: 1; background: white; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+        canvas { display: block; max-width: 100%; border-radius: 12px; background: #f8f9fa; cursor: crosshair; }
+        .canvas-wrapper { overflow: auto; max-height: 55vh; border: 1px solid #e2e8f0; border-radius: 16px; background: #eef2f5; position: relative; }
+        .action-buttons { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+        textarea { width: 100%; min-height: 200px; padding: 12px; border-radius: 16px; border: 1px solid #ddd; font-family: monospace; }
+        .batch-area { background: white; border-radius: 20px; padding: 20px; margin-top: 24px; }
+        .batch-file-list { font-size: 13px; color: #2c3e50; margin: 10px 0; max-height: 80px; overflow-y: auto; }
+        .result-block { background: #fef9ef; border-radius: 16px; padding: 12px; margin-bottom: 12px; }
+        .result-block pre { white-space: pre-wrap; background: white; padding: 8px; border-radius: 12px; margin-top: 8px; }
+        .loading-overlay { position: fixed; top:0;left:0;right:0;bottom:0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 9999; }
+        .spinner { width: 50px; height: 50px; border: 5px solid white; border-top: 5px solid #2c7da0; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .tip { font-size: 12px; color: #e67e22; margin-top: 8px; }
+        .block-item { background: white; border-left: 3px solid #cdd9ed; margin-bottom: 6px; padding: 6px 10px; border-radius: 12px; cursor: pointer; transition: 0.1s; }
+        .block-item:hover { background: #eef3fc; }
+        #tableView { overflow-x: auto; background: #fefcf5; border-radius: 16px; padding: 12px; display: none; }
+        #tableView table { border-collapse: collapse; width: 100%; }
+        #tableView th, #tableView td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .copy-batch-text { background: #3498db; border: none; border-radius: 20px; padding: 4px 12px; color: white; cursor: pointer; float: right; }
     </style>
+    <!-- 引入 FileSaver 和 JSZip -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- SheetJS 用于导出 Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <!-- htmlDocx 库 - 用于导出 Word -->
+    <script>
+        !function(e,t){"object"==typeof exports&&"undefined"!=typeof module?module.exports=t():"function"==typeof define&&define.amd?define(t):e.htmlDocx=t()}(this,(function(){var e={};function t(n){if(e[n])return e[n].exports;var r=e[n]={i:n,l:!1,exports:{}};return o[n].call(r.exports,r,r.exports,t),r.l=!0,r.exports}var n={};function r(e,t){for(var n in t)n!=="default"&&(!Object.prototype.hasOwnProperty.call(e,n)&&e[n]===void 0)&&(e[n]=t[n]);return e}var o={1:function(e,t,n){"use strict";Object.defineProperty(t,"__esModule",{value:!0}),t.asBlob=function(e){var t=n(2)(e);return new Blob([t],{type:"application/vnd.openxmlformats-officedocument.wordprocessingml.document"})}},2:function(e,t,n){"use strict";Object.defineProperty(t,"__esModule",{value:!0});var r=n(3),o=n(4),i=n(5),a=n(6),l=n(7);t.default=function(e){var t=document.createElement("html");return t.innerHTML=e,t=o.default(t),i.default(t),l.default(t),r.default(t),a.default(t),new XMLSerializer().serializeToString(t)}},3:function(e,t,n){"use strict";Object.defineProperty(t,"__esModule",{value:!0}),t.default=function(e){var t=e.createElement("w:document"),n=e.createElement("w:body");t.appendChild(n);var r=e.documentElement;void 0!==r.style&&(r.style.cssText="");var o=e.body;if(o)for(;o.firstChild;)n.appendChild(o.firstChild);else for(;r.firstChild;)r.firstChild.nodeName.toLowerCase()==="head"?r.removeChild(r.firstChild):n.appendChild(r.firstChild);e.appendChild(t);var i=e.createElement("w:fonts");i.appendChild((function(e){var t=e.createElement("w:font"),n=e.createElement("w:fontFamily");return n.setAttribute("w:val","Arial"),t.appendChild(n),t.setAttribute("w:name","Arial"),t})(e)),e.appendChild(i);var a=e.createElement("w:styles");a.appendChild((function(e){var t=e.createElement("w:style");t.setAttribute("w:type","paragraph"),t.setAttribute("w:styleId","Normal");var n=e.createElement("w:pPr"),r=e.createElement("w:spacing");return r.setAttribute("w:after","200"),r.setAttribute("w:line","240"),r.setAttribute("w:lineRule","auto"),n.appendChild(r),t.appendChild(n),t})(e)),e.appendChild(a)}},4:function(e,t,n){"use strict";Object.defineProperty(t,"__esModule",{value:!0}),t.default=function(e){var t=e.querySelectorAll("*");for(var n=0;n<t.length;n++){var r=t[n];if(r.style.fontWeight&&(r.style.fontWeight.toLowerCase()=="bold"||parseInt(r.style.fontWeight)>=700)){var o=document.createElement("strong");for(;r.firstChild;)o.appendChild(r.firstChild);r.appendChild(o)}if(r.style.fontStyle&&r.style.fontStyle.toLowerCase()=="italic"){var i=document.createElement("em");for(;r.firstChild;)i.appendChild(r.firstChild);r.appendChild(i)}}}}},5:function(e,t,n){"use strict";Object.defineProperty(t,"__esModule",{value:!0}),t.default=function(e){var t=e.querySelectorAll("p, div, h1, h2, h3, h4, h5, h6, li, td, th");for(var n=0;n<t.length;n++){var r=t[n];if(r.nodeName.toLowerCase()!=="p"&&(r.childNodes.length>0&&!(r.firstChild.nodeType==3&&r.firstChild.textContent.trim()===""||r.firstChild.nodeName.toLowerCase()==="br"))){var o=document.createElement("p");for(;r.firstChild;)o.appendChild(r.firstChild);r.parentNode.replaceChild(o,r)}}}}},6:function(e,t,n){"use strict";Object.defineProperty(t,"__esModule",{value:!0}),t.default=function(e){var t=e.querySelectorAll("br");for(var n=0;n<t.length;n++){var r=t[n],o=document.createElement("w:br");r.parentNode.replaceChild(o,r)}}},7:function(e,t,n){"use strict";Object.defineProperty(t,"__esModule",{value:!0}),t.default=function(e){var t=e.querySelectorAll("strong, em");for(var n=0;n<t.length;n++){var r=t[n],o=r.nodeName.toLowerCase(),i=document.createElement("w:rPr"),a=document.createElement("w:"+("strong"===o?"b":"i"));i.appendChild(a);var l=document.createElement("w:r");l.appendChild(i);for(;r.firstChild;)l.appendChild(r.firstChild);r.parentNode.replaceChild(l,r)}}}};var a=function(e){return t(n[e])};return a.m=o,a.c=e,a.d=function(e,t,n){a.o(e,t)||Object.defineProperty(e,t,{enumerable:!0,get:n})},a.r=function(e){"undefined"!=typeof Symbol&&Symbol.toStringTag&&Object.defineProperty(e,Symbol.toStringTag,{value:"Module"}),Object.defineProperty(e,"__esModule",{value:!0})},a.t=function(e,t){if(1&t&&(e=a(e)),8&t)return e;if(4&t&&"object"==typeof e&&e&&e.__esModule)return e;var n=Object.create(null);if(a.r(n),Object.defineProperty(n,"default",{enumerable:!0,value:e}),2&t&&"string"!=typeof e)for(var r in e)a.d(n,r,function(t){return e[t]}.bind(null,r));return n},a.n=function(e){var t=e&&e.__esModule?function(){return e.default}:function(){return e};return a.d(t,"a",t),t},a.o=function(e,t){return Object.prototype.hasOwnProperty.call(e,t)},a.p="",a(a.s=1)}));
+    </script>
 </head>
 <body>
-
 <div class="container">
-    <h2>OCR</h2>
-    <div id="dropZone" class="drop-zone">
-        点击或拖动图片到这里上传
+    <div class="top-bar">
+        <div class="model-group">
+            <label>📌 识别模型（仅通用OCR有效）：</label>
+            <select id="modelSelect">
+                <option value="PP-OCRv5">PP-OCRv5</option>
+                <option value="PP-OCRv4">PP-OCRv4</option>
+            </select>
+        </div>
+        <div class="model-group">
+            <label>🔧 任务类型：</label>
+            <select id="taskType">
+                <option value="general">📝 通用文字识别</option>
+                <option value="plate">🚗 车牌识别</option>
+                <option value="table">📊 表格识别</option>
+            </select>
+        </div>
+        <button id="batchSelectBtn">📁 批量选择图片/PDF</button>
+        <button id="batchClearBtn">🗑️ 清除批量列表</button>
+        <button id="batchRunBtn">🚀 批量识别</button>
+        <button id="batchDownloadBtn" style="display:none;">📦 下载压缩包</button>
     </div>
 
-    <!-- 加载动画 -->
-    <div id="loadingOverlay" class="loading-overlay">
-        <div class="spinner"></div>
+    <!-- 单图拖拽区 -->
+    <div id="singleDropZone" class="drop-zone">
+        📸 点击或拖拽单张图片（JPG/PNG/BMP）到这里 — 精细识别用（双击图片全屏）
     </div>
 
-    <!-- 结果区域 -->
-    <div id="canvasContainer" class="canvas-container">
-        <canvas id="canvasOriginal"></canvas>
-        <canvas id="canvasTextOnly"></canvas>
+    <div class="flex-row" id="resultPanel" style="display: none;">
+        <div class="image-panel">
+            <h3>📷 图片操作区</h3>
+            <div class="canvas-wrapper" id="canvasWrapper">
+                <canvas id="mainCanvas"></canvas>
+            </div>
+            <div class="action-buttons">
+                <button id="fullRecogBtn">🔍 识别整图</button>
+                <button id="rangeRecogBtn">✂️ 识别框选区域</button>
+                <button id="resetZoomBtn">↺ 重置缩放</button>
+                <button id="clearSingleBtn">🗑️ 清除单图</button>
+            </div>
+            <div class="tip">💡 鼠标左键拖拽框选区域 | 滚轮缩放 | 拖拽空白处平移 | 双击图片全屏</div>
+        </div>
+        <div class="text-panel">
+            <h3>📝 识别结果</h3>
+            <div id="blocksNav" style="border:1px solid #e9ecef; border-radius:16px; max-height:180px; overflow-y:auto; padding:8px; display: none;"></div>
+            <textarea id="ocrText" readonly placeholder="识别结果将显示在这里..." style="display: none;"></textarea>
+            <div id="tableView"></div>
+            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                <button id="copyTextBtn">📋 复制全文</button>
+                <button id="exportBtn">📄 导出（Word/Excel）</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 批量识别结果区 -->
+    <div id="batchArea" class="batch-area" style="display: none;">
+        <h3>📚 批量识别结果</h3>
+        <div id="batchFileList" class="batch-file-list">未选择文件</div>
+        <div id="batchResults"></div>
     </div>
 </div>
+<div id="loadingOverlay" class="loading-overlay"><div class="spinner"></div></div>
 
 <script>
-    const dropZone = document.getElementById('dropZone');
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = 'image/*';
+    // ---------- 依赖检测 ----------
+    if (typeof saveAs === 'undefined') {
+        console.error('FileSaver.js 未加载，保存功能将不可用');
+        alert('FileSaver.js 加载失败，导出/下载功能可能异常，请刷新页面或检查网络。');
+    }
+    if (typeof htmlDocx === 'undefined') {
+        console.error('htmlDocx 未加载，Word 导出将使用纯文本备用方案');
+    }
+    if (typeof XLSX === 'undefined') {
+        console.error('SheetJS 未加载，Excel导出将不可用');
+    }
 
-    const MAX_DISPLAY_WIDTH = 500;
-
-    const canvasOriginal = document.getElementById('canvasOriginal');
-    const ctxOriginal = canvasOriginal.getContext('2d');
-
-    const canvasTextOnly = document.getElementById('canvasTextOnly');
-    const ctxTextOnly = canvasTextOnly.getContext('2d');
-
-    const canvasContainer = document.getElementById('canvasContainer');
+    // ---------- DOM 元素 ----------
+    const singleDropZone = document.getElementById('singleDropZone');
+    const canvas = document.getElementById('mainCanvas');
+    const ctx = canvas.getContext('2d');
+    const canvasWrapper = document.getElementById('canvasWrapper');
+    const modelSelect = document.getElementById('modelSelect');
+    const taskTypeSelect = document.getElementById('taskType');
+    const resultPanel = document.getElementById('resultPanel');
+    const ocrText = document.getElementById('ocrText');
+    const blocksNav = document.getElementById('blocksNav');
+    const tableViewDiv = document.getElementById('tableView');
+    const fullRecogBtn = document.getElementById('fullRecogBtn');
+    const rangeRecogBtn = document.getElementById('rangeRecogBtn');
+    const resetZoomBtn = document.getElementById('resetZoomBtn');
+    const clearSingleBtn = document.getElementById('clearSingleBtn');
+    const copyTextBtn = document.getElementById('copyTextBtn');
+    const exportBtn = document.getElementById('exportBtn');
     const loadingOverlay = document.getElementById('loadingOverlay');
+    const batchSelectBtn = document.getElementById('batchSelectBtn');
+    const batchClearBtn = document.getElementById('batchClearBtn');
+    const batchRunBtn = document.getElementById('batchRunBtn');
+    const batchDownloadBtn = document.getElementById('batchDownloadBtn');
+    const batchFileListDiv = document.getElementById('batchFileList');
+    const batchResultsDiv = document.getElementById('batchResults');
+    const batchArea = document.getElementById('batchArea');
 
-    // 点击上传
-    dropZone.addEventListener('click', () => {
-        fileInput.click();
-    });
+    // ---------- 单图状态 ----------
+    let originalImg = null;
+    let imgWidth = 0, imgHeight = 0;
+    let imgBase64 = null;
+    let zoom = 1.0;
+    let currentSelection = null;
+    let isSelecting = false;
+    let selectStart = { x: 0, y: 0 };
+    let lastRecogResults = null;
+    let flashTimeout = null;
 
-    // 拖拽上传
-    dropZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        dropZone.classList.add('dragover');
-    });
+    // 平移拖拽状态
+    let isPanning = false, panStart = { x: 0, y: 0 }, scrollStart = { left: 0, top: 0 };
 
-    dropZone.addEventListener('dragleave', () => {
-        dropZone.classList.remove('dragover');
-    });
+    // 批量状态
+    let batchFiles = [];
+    let batchResultCache = [];
 
-    dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('dragover');
-        const file = e.dataTransfer.files[0];
-        if (file && file.type.startsWith('image/')) {
-            handleImage(file);
+    // ---------- 辅助函数 ----------
+    function showLoading() { loadingOverlay.style.display = 'flex'; }
+    function hideLoading() { loadingOverlay.style.display = 'none'; }
+    function showTip(msg, isError = false) { alert(msg); }
+
+    // ---------- 绘制相关 (全屏 + 闪烁) ----------
+    function drawImageAndSelection(extraHighlight = null) {
+        if (!originalImg) return;
+        const w = imgWidth * zoom, h = imgHeight * zoom;
+        canvas.width = w;
+        canvas.height = h;
+        canvas.style.width = `${w}px`;
+        canvas.style.height = `${h}px`;
+        ctx.clearRect(0, 0, w, h);
+        ctx.drawImage(originalImg, 0, 0, w, h);
+        if (currentSelection) {
+            ctx.save();
+            ctx.strokeStyle = '#ff6600';
+            ctx.fillStyle = 'rgba(255,102,0,0.2)';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([6, 10]);
+            ctx.fillRect(currentSelection.x, currentSelection.y, currentSelection.w, currentSelection.h);
+            ctx.strokeRect(currentSelection.x, currentSelection.y, currentSelection.w, currentSelection.h);
+            ctx.setLineDash([]);
+            ctx.restore();
+        }
+        if (extraHighlight && extraHighlight.x !== undefined) {
+            ctx.save();
+            ctx.strokeStyle = '#ffcc00';
+            ctx.fillStyle = 'rgba(255,204,0,0.4)';
+            ctx.lineWidth = 4;
+            ctx.fillRect(extraHighlight.x, extraHighlight.y, extraHighlight.w, extraHighlight.h);
+            ctx.strokeRect(extraHighlight.x, extraHighlight.y, extraHighlight.w, extraHighlight.h);
+            ctx.restore();
+        }
+    }
+
+    function updateCanvasSizeAndDraw(highlight = null) {
+        if (!originalImg) return;
+        drawImageAndSelection(highlight);
+    }
+
+    function resetZoomAndCenter() {
+        if (!originalImg) return;
+        const wrapperRect = canvasWrapper.getBoundingClientRect();
+        const fitScale = (wrapperRect.width - 20) / imgWidth;
+        zoom = Math.min(2.0, Math.max(0.3, fitScale));
+        drawImageAndSelection();
+        canvasWrapper.scrollLeft = 0;
+        canvasWrapper.scrollTop = 0;
+    }
+
+    function flashBlock(boundingBox) {
+        if (!originalImg || !boundingBox) return;
+        if (flashTimeout) clearTimeout(flashTimeout);
+        const pts = boundingBox.map(p => ({ x: p[0] * zoom, y: p[1] * zoom }));
+        const left = Math.min(...pts.map(p => p.x));
+        const top = Math.min(...pts.map(p => p.y));
+        const right = Math.max(...pts.map(p => p.x));
+        const bottom = Math.max(...pts.map(p => p.y));
+        const w = right - left, h = bottom - top;
+        if (w <= 0 || h <= 0) return;
+        const highlightRect = { x: left, y: top, w, h };
+        drawImageAndSelection(highlightRect);
+        flashTimeout = setTimeout(() => {
+            drawImageAndSelection();
+            flashTimeout = null;
+        }, 400);
+    }
+
+    // 全屏功能
+    function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            canvasWrapper.requestFullscreen().catch(err => console.warn(err));
         } else {
-            alert("请上传图片文件");
+            document.exitFullscreen();
         }
-    });
+    }
+    document.addEventListener('fullscreenchange', () => { if (originalImg) drawImageAndSelection(); });
+    canvasWrapper.addEventListener('dblclick', (e) => { e.stopPropagation(); if (originalImg) toggleFullscreen(); });
 
-    fileInput.addEventListener('change', () => {
-        const file = fileInput.files[0];
-        if (file) {
-            handleImage(file);
+    // 加载单张图片
+    function loadSingleImage(file) {
+        if (!file.type.startsWith('image/')) {
+            showTip('请选择图片文件', true);
+            return;
         }
-    });
-
-    function handleImage(file) {
         const reader = new FileReader();
-        reader.onload = function (e) {
+        reader.onload = (e) => {
             const img = new Image();
-            img.onload = function () {
-                const scale = MAX_DISPLAY_WIDTH / img.width;
-                const displayWidth = img.width * scale;
-                const displayHeight = img.height * scale;
-
-                // 设置 canvas 尺寸
-                canvasOriginal.width = displayWidth;
-                canvasOriginal.height = displayHeight;
-                canvasTextOnly.width = displayWidth;
-                canvasTextOnly.height = displayHeight;
-
-                // 清除之前的绘图
-                ctxOriginal.clearRect(0, 0, displayWidth, displayHeight);
-                ctxTextOnly.clearRect(0, 0, displayWidth, displayHeight);
-
-                // 绘制原始图像
-                ctxOriginal.drawImage(img, 0, 0, displayWidth, displayHeight);
-
-                // 显示 canvas 容器
-                canvasContainer.style.display = "flex";
-
-                // 显示加载动画
-                loadingOverlay.style.display = "flex";
-
-                const base64Image = e.target.result.split(',')[1];
-                sendToOCR(base64Image, img.width, img.height, displayWidth, displayHeight);
+            img.onload = () => {
+                originalImg = img;
+                imgWidth = img.width;
+                imgHeight = img.height;
+                imgBase64 = e.target.result.split(',')[1];
+                currentSelection = null;
+                lastRecogResults = null;
+                ocrText.value = '';
+                tableViewDiv.innerHTML = '';
+                ocrText.style.display = 'none';
+                tableViewDiv.style.display = 'none';
+                blocksNav.style.display = 'none';
+                resultPanel.style.display = 'flex';
+                resetZoomAndCenter();
+               // showTip('✅ 图片加载成功');
             };
             img.src = e.target.result;
         };
         reader.readAsDataURL(file);
     }
 
-    function sendToOCR(base64Image, originalWidth, originalHeight, displayWidth, displayHeight) {
-        fetch('/ocr', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ image: base64Image })
-        })
-            .then(res => res.json())
-            .then(data => {
-                drawBoxesAndTextWithOrientation(data.results, originalWidth, originalHeight, displayWidth, displayHeight);
-                // 隐藏加载动画
-                loadingOverlay.style.display = "none";
-            })
-            .catch(err => {
-                console.error("OCR 调用失败", err);
-                alert("OCR 识别失败，请查看控制台日志");
-                loadingOverlay.style.display = "none";
+    // ---------- 调用不同接口 ----------
+    async function callOCR(base64Image, taskType) {
+        let endpoint = '';
+        let body = {};
+        if (taskType === 'plate') {
+            endpoint = '/plate';
+            body = { image: base64Image, min_score: 0.4 };
+        } else if (taskType === 'table') {
+            endpoint = '/table';
+            body = { image: base64Image };
+        } else {
+            endpoint = '/ocr';
+            body = { image: base64Image };
+        }
+        showLoading();
+        try {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
             });
-    }
-
-    function drawBoxesAndTextWithOrientation(results, originalWidth, originalHeight, displayWidth, displayHeight) {
-        ctxTextOnly.clearRect(0, 0, canvasTextOnly.width, canvasTextOnly.height);
-        ctxTextOnly.font = "12px sans-serif";
-        ctxTextOnly.fillStyle = "black";
-
-        const scaleX = displayWidth / originalWidth;
-        const scaleY = displayHeight / originalHeight;
-
-        results.forEach(result => {
-            const box = result.bounding_box.map(([x, y]) => [
-                x * scaleX,
-                y * scaleY
-            ]);
-
-            const [[x1, y1], [x2, y2], [x3, y3]] = box;
-
-            const width = Math.abs(x2 - x1);
-            const height = Math.abs(y3 - y1);
-
-            const decodedText = decodeUnicode(result.text);
-
-            // 判断方向：宽 < 高 → 竖排
-            if (width < height && height > 10) {
-                drawVerticalText(ctxTextOnly, decodedText, x1, y1, height);
-            } else {
-                ctxTextOnly.fillText(decodedText, x1, y1 + height / 2);
-            }
-
-            // 绘制左侧红色框
-            ctxOriginal.strokeStyle = "red";
-            ctxOriginal.lineWidth = 1;
-            ctxOriginal.strokeRect(x1, y1, width, height);
-        });
-    }
-
-    // 竖排文字绘制函数
-    function drawVerticalText(ctx, text, x, y, height) {
-        for (let i = 0; i < text.length; i++) {
-            ctx.fillText(text[i], x, y + i * 14);
+            const data = await response.json();
+            if (data.error) throw new Error(data.error);
+            hideLoading();
+            return data;
+        } catch (err) {
+            hideLoading();
+            showTip('请求失败：' + err.message, true);
+            return null;
         }
     }
 
-    // Unicode 解码函数
-    function decodeUnicode(str) {
-        return str.replace(/\\u([0-9a-fA-F]{4})/g, function (_, hex) {
-            return String.fromCharCode(parseInt(hex, 16));
+    // 格式化通用 OCR 结果（带坐标）
+    function formatTextFromResults(results) {
+        if (!results || !results.length) return '';
+        const items = results.map(r => {
+            const box = r.bounding_box;
+            const xs = box.map(p => p[0]), ys = box.map(p => p[1]);
+            return {
+                text: r.text.replace(/\\u([0-9a-fA-F]{4})/g, (_,h) => String.fromCharCode(parseInt(h,16))),
+                left: Math.min(...xs),
+                right: Math.max(...xs),
+                y: Math.min(...ys),
+                height: Math.max(...ys) - Math.min(...ys)
+            };
+        });
+        items.sort((a,b) => a.y - b.y);
+        const avgHeight = items.reduce((s,i) => s + i.height, 0) / items.length;
+        const lineThresh = avgHeight * 0.8;
+        let lines = [], curLine = [items[0]];
+        for (let i = 1; i < items.length; i++) {
+            if (Math.abs(items[i].y - curLine[0].y) < lineThresh) curLine.push(items[i]);
+            else { lines.push(curLine); curLine = [items[i]]; }
+        }
+        lines.push(curLine);
+        let finalText = '';
+        for (let line of lines) {
+            line.sort((a,b) => a.left - b.left);
+            let lineStr = '';
+            for (let i = 0; i < line.length; i++) {
+                if (i > 0 && line[i-1].right < line[i].left) lineStr += ' ';
+                lineStr += line[i].text.trim();
+            }
+            finalText += lineStr + '\n';
+        }
+        return finalText.trimEnd();
+    }
+
+    // 渲染导航块（仅通用OCR）
+    function renderNavigation(results) {
+        if (!results || results.length === 0) {
+            blocksNav.innerHTML = '<div style="padding:12px;text-align:center">暂无文字块</div>';
+            return;
+        }
+        let html = '<div style="padding:6px;">';
+        results.forEach((item, idx) => {
+            const text = item.text.replace(/\\u[\da-f]{4}/g, m => eval(`"${m}"`));
+            const preview = text.length > 40 ? text.slice(0,40)+'…' : text;
+            const box = item.bounding_box;
+            const cx = (box[0][0] + box[2][0]) / 2;
+            const cy = (box[0][1] + box[2][1]) / 2;
+            html += `<div class="block-item" data-cx="${cx}" data-cy="${cy}" data-box='${JSON.stringify(box)}'>
+                        <div>${escapeHtml(preview)}</div>
+                        <div style="font-size:10px;">📍 (${Math.round(cx)}, ${Math.round(cy)})</div>
+                    </div>`;
+        });
+        html += '</div>';
+        blocksNav.innerHTML = html;
+        document.querySelectorAll('.block-item').forEach(el => {
+            el.addEventListener('click', () => {
+                const cx = parseFloat(el.dataset.cx);
+                const cy = parseFloat(el.dataset.cy);
+                const boxData = el.dataset.box;
+                if (!boxData || isNaN(cx)) return;
+                const boundingBox = JSON.parse(boxData);
+                const targetCanvasX = cx * zoom;
+                const targetCanvasY = cy * zoom;
+                canvasWrapper.scrollTo({
+                    left: targetCanvasX - canvasWrapper.clientWidth/2,
+                    top: targetCanvasY - canvasWrapper.clientHeight/2,
+                    behavior: 'smooth'
+                });
+                flashBlock(boundingBox);
+                el.style.background = '#fff2e0';
+                setTimeout(() => { if (el) el.style.background = ''; }, 400);
+            });
         });
     }
-</script>
+    function escapeHtml(str) { return str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
 
+    // 整图识别（根据任务类型）
+    async function fullRecognize() {
+        if (!originalImg || !imgBase64) { showTip('请先上传图片', true); return; }
+        const taskType = taskTypeSelect.value;
+        const result = await callOCR(imgBase64, taskType);
+        if (result) {
+            if (taskType === 'table') {
+                ocrText.style.display = 'none';
+                tableViewDiv.style.display = 'block';
+                blocksNav.style.display = 'none';
+                tableViewDiv.innerHTML = result.html || '未检测到表格';
+            } else if (taskType === 'plate') {
+                ocrText.style.display = 'block';
+                tableViewDiv.style.display = 'none';
+                blocksNav.style.display = 'none';
+                let plateText = '未识别到车牌';
+                if (result.results && Array.isArray(result.results) && result.results.length > 0) {
+                    const first = result.results[0];
+                    if (first.text) plateText = first.text;
+                    else if (first.plate) plateText = first.plate;
+                    else if (typeof first === 'string') plateText = first;
+                    else if (first.content) plateText = first.content;
+                    else {
+                        plateText = JSON.stringify(first, null, 2);
+                        console.warn('车牌原始数据:', first);
+                    }
+                } else if (typeof result.results === 'string') {
+                    plateText = result.results;
+                } else if (result.plate) {
+                    plateText = result.plate;
+                }
+                ocrText.value = plateText;
+            } else { // general
+                ocrText.style.display = 'block';
+                tableViewDiv.style.display = 'none';
+                blocksNav.style.display = 'block';
+                const formatted = formatTextFromResults(result.results);
+                ocrText.value = formatted;
+                renderNavigation(result.results);
+                lastRecogResults = result.results;
+            }
+        }
+    }
+
+    // 框选识别（裁剪图片后调用对应接口）
+    async function rangeRecognize() {
+        if (!originalImg || !currentSelection) { showTip('请先用鼠标框选区域', true); return; }
+        const { x, y, w, h } = currentSelection;
+        if (w < 10 || h < 10) { showTip('框选区域太小', true); return; }
+        const origX = x / zoom, origY = y / zoom, origW = w / zoom, origH = h / zoom;
+        const cropCanvas = document.createElement('canvas');
+        cropCanvas.width = origW; cropCanvas.height = origH;
+        const cropCtx = cropCanvas.getContext('2d');
+        cropCtx.drawImage(originalImg, origX, origY, origW, origH, 0, 0, origW, origH);
+        const croppedBase64 = cropCanvas.toDataURL('image/jpeg', 0.9).split(',')[1];
+        const taskType = taskTypeSelect.value;
+        const result = await callOCR(croppedBase64, taskType);
+        if (result) {
+            if (taskType === 'table') {
+                ocrText.style.display = 'none';
+                tableViewDiv.style.display = 'block';
+                blocksNav.style.display = 'none';
+                tableViewDiv.innerHTML = result.html || '未检测到表格';
+            } else if (taskType === 'plate') {
+                ocrText.style.display = 'block';
+                tableViewDiv.style.display = 'none';
+                blocksNav.style.display = 'none';
+                let plateText = '未识别到车牌';
+                if (result.results && Array.isArray(result.results) && result.results.length > 0) {
+                    const first = result.results[0];
+                    if (first.text) plateText = first.text;
+                    else if (first.plate) plateText = first.plate;
+                    else if (typeof first === 'string') plateText = first;
+                    else if (first.content) plateText = first.content;
+                    else {
+                        plateText = JSON.stringify(first, null, 2);
+                        console.warn('车牌原始数据:', first);
+                    }
+                } else if (typeof result.results === 'string') {
+                    plateText = result.results;
+                } else if (result.plate) {
+                    plateText = result.plate;
+                }
+                ocrText.value = plateText;
+            } else {
+                ocrText.style.display = 'block';
+                tableViewDiv.style.display = 'none';
+                blocksNav.style.display = 'block';
+                const formatted = formatTextFromResults(result.results);
+                ocrText.value = formatted;
+                renderNavigation(result.results);
+                lastRecogResults = result.results;
+            }
+        }
+    }
+
+    // 清除单图
+    function clearSingle() {
+        originalImg = null;
+        resultPanel.style.display = 'none';
+        ocrText.value = '';
+        tableViewDiv.innerHTML = '';
+        blocksNav.innerHTML = '';
+        canvas.width = 0; canvas.height = 0;
+        currentSelection = null;
+        zoom = 1;
+    }
+
+    // ---------- 鼠标交互：框选 + 拖拽平移 ----------
+    function getCanvasCoords(e) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        let clientX, clientY;
+        if (e.touches) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; }
+        else { clientX = e.clientX; clientY = e.clientY; }
+        let x = (clientX - rect.left) * scaleX;
+        let y = (clientY - rect.top) * scaleY;
+        x = Math.min(Math.max(0, x), canvas.width);
+        y = Math.min(Math.max(0, y), canvas.height);
+        return { x, y };
+    }
+    function onMouseDown(e) {
+        if (e.button !== 0 || !originalImg) return;
+        e.preventDefault();
+        isSelecting = true;
+        selectStart = getCanvasCoords(e);
+        currentSelection = null;
+        drawImageAndSelection();
+    }
+    function onMouseMove(e) {
+        if (!isSelecting || !originalImg) return;
+        e.preventDefault();
+        const cur = getCanvasCoords(e);
+        const x = Math.min(selectStart.x, cur.x);
+        const y = Math.min(selectStart.y, cur.y);
+        const w = Math.abs(cur.x - selectStart.x);
+        const h = Math.abs(cur.y - selectStart.y);
+        if (w > 5 && h > 5) currentSelection = { x, y, w, h };
+        else currentSelection = null;
+        drawImageAndSelection();
+    }
+    function onMouseUp() {
+        isSelecting = false;
+        if (currentSelection && (currentSelection.w < 8 || currentSelection.h < 8)) currentSelection = null;
+        drawImageAndSelection();
+    }
+    canvas.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    canvasWrapper.addEventListener('wheel', (e) => {
+        if (!originalImg) return;
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+        let newZoom = zoom + delta;
+        newZoom = Math.min(3.0, Math.max(0.3, newZoom));
+        if (newZoom !== zoom) {
+            zoom = newZoom;
+            drawImageAndSelection();
+        }
+    }, { passive: false });
+    // 中键拖拽平移
+    canvasWrapper.addEventListener('mousedown', (e) => {
+        if (e.button === 1) {
+            e.preventDefault();
+            isPanning = true;
+            panStart = { x: e.clientX, y: e.clientY };
+            scrollStart = { left: canvasWrapper.scrollLeft, top: canvasWrapper.scrollTop };
+            canvasWrapper.style.cursor = 'grabbing';
+        }
+    });
+    window.addEventListener('mousemove', (e) => {
+        if (!isPanning) return;
+        e.preventDefault();
+        const dx = e.clientX - panStart.x;
+        const dy = e.clientY - panStart.y;
+        canvasWrapper.scrollLeft = scrollStart.left - dx;
+        canvasWrapper.scrollTop = scrollStart.top - dy;
+    });
+    window.addEventListener('mouseup', () => {
+        isPanning = false;
+        canvasWrapper.style.cursor = 'grab';
+    });
+
+    // ---------- 批量功能（前端循环请求 + JSZip） ----------
+    function updateBatchUI() {
+        if (batchFiles.length === 0) {
+            batchFileListDiv.innerText = '未选择文件';
+            batchDownloadBtn.style.display = 'none';
+            batchArea.style.display = 'none';
+        } else {
+            batchFileListDiv.innerText = batchFiles.map(f => f.name).join('；');
+            batchArea.style.display = 'block';
+        }
+    }
+    batchSelectBtn.addEventListener('click', () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.multiple = true;
+        input.accept = 'image/*,application/pdf';
+        input.onchange = (e) => {
+            batchFiles = Array.from(input.files);
+            updateBatchUI();
+            batchResultsDiv.innerHTML = '';
+            batchResultCache = [];
+            batchDownloadBtn.style.display = 'none';
+        };
+        input.click();
+    });
+    batchClearBtn.addEventListener('click', () => {
+        batchFiles = [];
+        updateBatchUI();
+        batchResultsDiv.innerHTML = '';
+        batchResultCache = [];
+        batchDownloadBtn.style.display = 'none';
+    });
+
+    async function runBatchOCR() {
+        if (batchFiles.length === 0) { showTip('请先选择批量文件', true); return; }
+        showLoading();
+        const taskType = taskTypeSelect.value;
+        batchResultCache = [];
+        let allHtml = '';
+        for (let i = 0; i < batchFiles.length; i++) {
+            const file = batchFiles[i];
+            try {
+                const base64 = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result.split(',')[1]);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+                const result = await callOCR(base64, taskType);
+                let content = '';
+                if (taskType === 'table') {
+                    content = result.html || '无表格内容';
+                } else if (taskType === 'plate') {
+                    if (result.results && Array.isArray(result.results) && result.results.length > 0) {
+                        const first = result.results[0];
+                        content = first.text || first.plate || first.content || JSON.stringify(first);
+                    } else if (typeof result.results === 'string') {
+                        content = result.results;
+                    } else if (result.plate) {
+                        content = result.plate;
+                    } else {
+                        content = '未识别到车牌';
+                    }
+                } else {
+                    content = formatTextFromResults(result.results);
+                }
+                batchResultCache.push({ filename: file.name, content: content });
+                const preview = content.length > 200 ? content.substring(0,200)+'…' : content;
+                allHtml += `<div class="result-block">
+                                <strong>📄 ${file.name}</strong>
+                                <button class="copy-batch-text" data-text="${escapeHtml(content).replace(/"/g, '&quot;')}">复制</button>
+                                <pre style="white-space:pre-wrap; margin-top:8px;">${escapeHtml(preview)}</pre>
+                            </div>`;
+                batchResultsDiv.innerHTML = allHtml;
+                document.querySelectorAll('.copy-batch-text').forEach(btn => {
+                    btn.onclick = () => { navigator.clipboard.writeText(btn.getAttribute('data-text')); showTip('已复制'); };
+                });
+            } catch (err) {
+                batchResultCache.push({ filename: file.name, content: `识别失败: ${err.message}` });
+                allHtml += `<div class="result-block"><strong>📄 ${file.name}</strong><pre>识别失败: ${err.message}</pre></div>`;
+                batchResultsDiv.innerHTML = allHtml;
+            }
+        }
+        hideLoading();
+        batchDownloadBtn.style.display = 'inline-block';
+    }
+
+    batchRunBtn.addEventListener('click', runBatchOCR);
+    batchDownloadBtn.addEventListener('click', async () => {
+        if (batchResultCache.length === 0) { showTip('无结果可下载', true); return; }
+        const zip = new JSZip();
+        for (const item of batchResultCache) {
+            let ext = '.txt';
+            if (taskTypeSelect.value === 'table') ext = '.html';
+            zip.file(item.filename.replace(/\.\w+$/, '') + ext, item.content);
+        }
+        const blob = await zip.generateAsync({ type: 'blob' });
+        saveAs(blob, `OCR_Batch_${Date.now()}.zip`);
+    });
+
+    // ---------- 导出功能：通用OCR/车牌 -> Word（直接下载）；表格 -> Excel（直接下载）----------
+    async function exportResult() {
+        try {
+            const taskType = taskTypeSelect.value;
+            if (tableViewDiv.style.display === 'block') {
+                // 表格识别 → Excel
+                const tableHtml = tableViewDiv.innerHTML;
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(tableHtml, 'text/html');
+                const tableElem = doc.querySelector('table');
+                if (!tableElem) {
+                    showTip('未找到表格数据，无法导出Excel', true);
+                    return;
+                }
+                const workbook = XLSX.utils.book_new();
+                const worksheet = XLSX.utils.table_to_sheet(tableElem, { raw: true });
+                XLSX.utils.book_append_sheet(workbook, worksheet, 'OCR表格结果');
+                const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+                const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                saveAs(blob, `表格识别_${Date.now()}.xlsx`);
+                // 直接下载，无提示
+            } else if (ocrText.style.display === 'block' && ocrText.value) {
+                // 文本结果（通用OCR或车牌） → Word
+                let contentText = ocrText.value;
+                const contentHtml = contentText.replace(/\n/g, '<br/>');
+                const fullHtml = `<!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>OCR识别内容</title>
+                    <style>
+                        body { font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; margin: 40px; line-height: 1.5; }
+                        .ocr-text { white-space: pre-wrap; }
+                    </style>
+                </head>
+                <body>
+                    <div class="ocr-text">${contentHtml}</div>
+                </body>
+                </html>`;
+                if (typeof htmlDocx !== 'undefined' && htmlDocx.asBlob) {
+                    try {
+                        const blob = htmlDocx.asBlob(fullHtml);
+                        const suffix = taskType === 'plate' ? '车牌' : '文字';
+                        saveAs(blob, `${suffix}_识别_${Date.now()}.docx`);
+                    } catch (e) {
+                        console.error('htmlDocx转换失败，降级为.doc', e);
+                        const blob = new Blob([fullHtml], { type: 'application/msword' });
+                        saveAs(blob, `OCR_结果_${Date.now()}.doc`);
+                    }
+                } else {
+                    const blob = new Blob([fullHtml], { type: 'application/msword' });
+                    saveAs(blob, `OCR_结果_${Date.now()}.doc`);
+                }
+                // 直接下载，无提示
+            } else {
+                showTip('无内容可导出', true);
+            }
+        } catch (err) {
+            console.error('导出失败:', err);
+            showTip('导出失败：' + err.message, true);
+        }
+    }
+
+    // 绑定导出按钮
+    exportBtn.addEventListener('click', exportResult);
+
+    // 单图上传拖拽
+    singleDropZone.addEventListener('click', () => {
+        const inp = document.createElement('input');
+        inp.type = 'file';
+        inp.accept = 'image/*';
+        inp.onchange = (e) => { if (inp.files[0]) loadSingleImage(inp.files[0]); };
+        inp.click();
+    });
+    singleDropZone.addEventListener('dragover', (e) => { e.preventDefault(); singleDropZone.classList.add('dragover'); });
+    singleDropZone.addEventListener('dragleave', () => singleDropZone.classList.remove('dragover'));
+    singleDropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        singleDropZone.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) loadSingleImage(file);
+        else showTip('请拖拽图片文件', true);
+    });
+
+    // 按钮绑定
+    fullRecogBtn.addEventListener('click', fullRecognize);
+    rangeRecogBtn.addEventListener('click', rangeRecognize);
+    resetZoomBtn.addEventListener('click', () => { if(originalImg) resetZoomAndCenter(); });
+    clearSingleBtn.addEventListener('click', clearSingle);
+    copyTextBtn.addEventListener('click', () => {
+        if (ocrText.style.display === 'block' && ocrText.value) {
+            navigator.clipboard.writeText(ocrText.value);
+            showTip('已复制');
+        } else if (tableViewDiv.style.display === 'block') {
+            const text = tableViewDiv.innerText;
+            navigator.clipboard.writeText(text);
+            showTip('已复制表格文本');
+        } else showTip('暂无内容', true);
+    });
+
+    console.log('页面已加载，导出功能已优化：直接下载，无成功弹窗');
+</script>
 </body>
 </html>
