@@ -32,3 +32,4 @@ pydantic
 matplotlib
 tokenizers
 modelscope
+huggingface_hub

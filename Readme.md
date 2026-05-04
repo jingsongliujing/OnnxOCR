@@ -46,26 +46,34 @@ pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
 Notes:
 
 - By default, the repository only includes the PP-OCRv5 general OCR model files required by `tests/test_general_ocr.py`.
-- Extra models for license plate recognition, table recognition, layout analysis, orientation classification, and RapidDoc Markdown export are large and should be downloaded on demand from [huggingface](https://huggingface.co/jingsongliu/onnxocr_model/tree/main) or [ModelScope](https://www.modelscope.cn/models/supersong/onnxocr_model/tree/master/models).
+- Extra models for license plate recognition, table recognition, layout analysis, orientation classification, and RapidDoc Markdown export are large and should be downloaded on demand. For international users, [HuggingFace](https://huggingface.co/jingsongliu/onnxocr_model/tree/main) is recommended.
 - Larger PP-OCRv5 Server ONNX models can also be downloaded separately and used to replace det/rec models under `onnxocr/models/ppocrv5/`.
 
 ## Model Download
 
-Extra models are hosted under the `models/` directory of [supersong/onnxocr_model](https://www.modelscope.cn/models/supersong/onnxocr_model/tree/master/models) or [huggingface](https://huggingface.co/jingsongliu/onnxocr_model/tree/main). Download all optional models with:
+Extra models are hosted on [HuggingFace: jingsongliu/onnxocr_model](https://huggingface.co/jingsongliu/onnxocr_model/tree/main). International users are recommended to download from HuggingFace:
+
+```bash
+python scripts/download_models.py --source huggingface
+```
+
+The core HuggingFace API is:
+
+```python
+from huggingface_hub import snapshot_download
+
+model_dir = snapshot_download("jingsongliu/onnxocr_model")
+```
+
+For users in mainland China, ModelScope remains the default and recommended source:
 
 ```bash
 python scripts/download_models.py
 ```
 
-The core ModelScope API is:
+ModelScope repository: [supersong/onnxocr_model](https://www.modelscope.cn/models/supersong/onnxocr_model/tree/master/models).
 
-```python
-from modelscope import snapshot_download
-
-model_dir = snapshot_download("supersong/onnxocr_model")
-```
-
-The script copies the ModelScope `models/` directory into local `onnxocr/models/` and checks required optional files such as `onnxocr/models/rapid_doc/layout/pp_doclayoutv2.onnx`.
+The script copies the repository `models/` directory into local `onnxocr/models/` and checks required optional files such as `onnxocr/models/rapid_doc/layout/pp_doclayoutv2.onnx`.
 
 To check local models only:
 

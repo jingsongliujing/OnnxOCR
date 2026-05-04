@@ -1,9 +1,11 @@
 import argparse
+import os
 import shutil
 from pathlib import Path
 
 
-DEFAULT_REPO_ID = "supersong/onnxocr_model"
+DEFAULT_MODELSCOPE_REPO_ID = "supersong/onnxocr_model"
+DEFAULT_HUGGINGFACE_REPO_ID = "jingsongliu/onnxocr_model"
 DEFAULT_MODEL_SUBDIR = "models"
 
 REQUIRED_MODEL_FILES = [
@@ -80,20 +82,59 @@ def download_from_modelscope(repo_id: str, revision: str | None) -> Path:
     return Path(snapshot_download(**kwargs))
 
 
+def download_from_huggingface(
+    repo_id: str,
+    revision: str | None,
+    hf_endpoint: str | None,
+) -> Path:
+    if hf_endpoint:
+        os.environ["HF_ENDPOINT"] = hf_endpoint.rstrip("/")
+
+    try:
+        from huggingface_hub import snapshot_download
+    except ImportError as exc:
+        raise RuntimeError(
+            "huggingface_hub is not installed. Install it with: pip install huggingface_hub"
+        ) from exc
+
+    kwargs = {"repo_id": repo_id}
+    if revision:
+        kwargs["revision"] = revision
+    return Path(snapshot_download(**kwargs))
+
+
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Download OnnxOCR models from ModelScope.")
-    parser.add_argument("--repo-id", default=DEFAULT_REPO_ID, help="ModelScope repo id.")
+    parser = argparse.ArgumentParser(description="Download OnnxOCR models.")
+    parser.add_argument(
+        "--source",
+        choices=("modelscope", "huggingface"),
+        default="modelscope",
+        help="Download source. Default: modelscope, recommended in mainland China.",
+    )
+    parser.add_argument(
+        "--repo-id",
+        default=None,
+        help=(
+            "Model repository id. Defaults to supersong/onnxocr_model for ModelScope "
+            "and jingsongliu/onnxocr_model for HuggingFace."
+        ),
+    )
     parser.add_argument(
         "--model-subdir",
         default=DEFAULT_MODEL_SUBDIR,
-        help="Model directory inside the ModelScope snapshot. Default: models.",
+        help="Model directory inside the downloaded snapshot. Default: models.",
     )
     parser.add_argument(
         "--output-dir",
         default=str(default_model_dir()),
         help="Target model directory. Default: onnxocr/models.",
     )
-    parser.add_argument("--revision", default=None, help="Optional ModelScope revision.")
+    parser.add_argument("--revision", default=None, help="Optional model repository revision.")
+    parser.add_argument(
+        "--hf-endpoint",
+        default=None,
+        help="Optional HuggingFace endpoint, for example https://hf-mirror.com.",
+    )
     parser.add_argument(
         "--overwrite",
         action="store_true",
@@ -109,9 +150,20 @@ def main() -> None:
     output_dir = Path(args.output_dir).resolve()
 
     if not args.check_only:
-        snapshot_dir = download_from_modelscope(args.repo_id, args.revision)
+        if args.source == "modelscope":
+            repo_id = args.repo_id or DEFAULT_MODELSCOPE_REPO_ID
+            snapshot_dir = download_from_modelscope(repo_id, args.revision)
+        else:
+            repo_id = args.repo_id or DEFAULT_HUGGINGFACE_REPO_ID
+            snapshot_dir = download_from_huggingface(
+                repo_id,
+                revision=args.revision,
+                hf_endpoint=args.hf_endpoint,
+            )
         model_root = find_snapshot_model_root(snapshot_dir, args.model_subdir)
-        print(f"ModelScope snapshot: {snapshot_dir}")
+        print(f"Download source: {args.source}")
+        print(f"Repository: {repo_id}")
+        print(f"Snapshot: {snapshot_dir}")
         print(f"Copy models from: {model_root}")
         print(f"Copy models to: {output_dir}")
         copy_tree(model_root, output_dir, overwrite=args.overwrite)

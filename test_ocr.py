@@ -8,11 +8,18 @@ from tests.test_table_ocr import run_table_ocr
 def run_all():
     # The repository keeps only the PP-OCRv5 general OCR models by default.
     # Extra models for license plate OCR, table recognition, layout analysis,
-    # and RapidDoc Markdown export can be downloaded on demand:
+    # and RapidDoc Markdown export can be downloaded on demand.
     #
+    # Mainland China, ModelScope is recommended:
     #   python scripts/download_models.py
     #
-    # ModelScope path:
+    # International users, HuggingFace is recommended:
+    #   python scripts/download_models.py --source huggingface
+    #
+    # HuggingFace mirror in mainland China:
+    #   python scripts/download_models.py --source huggingface --hf-endpoint https://hf-mirror.com
+    #
+    # Model repositories:
     #   https://www.modelscope.cn/models/supersong/onnxocr_model/tree/master/models
     #   https://huggingface.co/jingsongliu/onnxocr_model/tree/main
     run_general_ocr()
