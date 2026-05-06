@@ -140,7 +140,7 @@ def create_session(
         gpu_id=gpu_id,
         providers=providers,
     )
-    log.info("创建 ONNX session: {}, providers={}", model_path, session_providers)
+    log.info("Creating ONNX session: {}, providers={}", model_path, session_providers)
     try:
         return InferenceSession(
             model_path,
@@ -148,5 +148,5 @@ def create_session(
             providers=session_providers,
         )
     except Exception as e:
-        log.error("模型加载失败: {}, 错误: {}", model_path, e)
+        log.error("Failed to load model: {}, error: {}", model_path, e)
         raise

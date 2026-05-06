@@ -9,7 +9,7 @@ from .logger import get_logger
 
 log = get_logger("utils")
 
-# 获取当前文件所在的目录
+# Current module directory
 module_dir = Path(__file__).resolve().parent
 
 

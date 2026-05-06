@@ -47,7 +47,7 @@ class ONNXPaddleOcr(TextSystem):
             )
 
         if self.use_plate_recognition:
-            log.info("初始化车牌识别模式")
+            log.info("Initializing plate recognition mode")
             self.plate_recognizer = LicensePlateRecognizer(
                 detect_model_path=plate_detect_model_path,
                 rec_model_path=plate_rec_model_path,
@@ -56,7 +56,7 @@ class ONNXPaddleOcr(TextSystem):
             return
 
         if self.use_layout_analysis:
-            log.info("初始化版面分析模式")
+            log.info("Initializing layout analysis mode")
             self.layout_recognizer = LayoutRecognizer(
                 model_type=layout_model_type,
                 model_path=layout_model_path,
@@ -76,10 +76,10 @@ class ONNXPaddleOcr(TextSystem):
         params.__dict__.update(**kwargs)
 
         super().__init__(params)
-        log.info("OCR 模型初始化完成: det={}, cls={}, rec={}", True, self.use_angle_cls, True)
+        log.info("OCR model initialized: det=True, cls={}, rec=True", self.use_angle_cls)
         self.table_recognizer = None
         if self.use_table_recognition:
-            log.info("初始化表格识别模式")
+            log.info("Initializing table recognition mode")
             self.table_recognizer = TableRecognizer(
                 model_type=table_model_type,
                 model_path=table_model_path,

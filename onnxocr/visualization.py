@@ -18,7 +18,7 @@ def _load_font(font_path: str, size: int):
     try:
         return ImageFont.truetype(font_path, size, encoding="utf-8")
     except Exception:
-        log.warning("字体加载失败，使用默认字体: {}", font_path)
+        log.warning("Font load failed, using default: {}", font_path)
         return ImageFont.load_default()
 
 

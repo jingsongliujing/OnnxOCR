@@ -21,11 +21,11 @@ class TextRecognizer(PredictBase):
             use_space_char=args.use_space_char,
         )
 
-        # 初始化模型
+        # Initialize model
         self.rec_onnx_session = self.get_onnx_session(args.rec_model_dir, args.use_gpu, gpu_id = args.gpu_id)
         self.rec_input_name = self.get_input_name(self.rec_onnx_session)
         self.rec_output_name = self.get_output_name(self.rec_onnx_session)
-        log.info("识别模型加载完成: {}", args.rec_model_dir)
+        log.info("Recognition model loaded: {}", args.rec_model_dir)
 
     def resize_norm_img(self, img, max_wh_ratio):
         imgC, imgH, imgW = self.rec_image_shape

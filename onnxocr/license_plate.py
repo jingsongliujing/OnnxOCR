@@ -42,7 +42,7 @@ class LicensePlateRecognizer:
         self.session_rec = create_session(
             self.rec_model_path, providers=self.providers
         )
-        log.info("车牌识别模型加载完成: detect={}, rec={}", self.detect_model_path, self.rec_model_path)
+        log.info("License plate model loaded: detect={}, rec={}", self.detect_model_path, self.rec_model_path)
 
     def recognize(
         self,

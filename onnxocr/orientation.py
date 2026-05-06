@@ -37,7 +37,7 @@ class RapidOrientationClassifier:
         self.input_name = self.session.get_inputs()[0].name
         self.output_names = [item.name for item in self.session.get_outputs()]
         self.labels = self._load_labels()
-        log.info("方向分类器加载完成: {}", self.model_path)
+        log.info("Orientation classifier loaded: {}", self.model_path)
 
     def __call__(self, img_list: List[np.ndarray]) -> Tuple[List[np.ndarray], List[List]]:
         img_list = [self._ensure_bgr(img).copy() for img in img_list]

@@ -67,7 +67,7 @@ class LayoutMarkdownConverter:
             table_model_type=table_model_type,
             table_engine_cfg=table_engine_cfg or {},
         )
-        log.info("LayoutMarkdownConverter 初始化完成, layout_model={}, table_enable={}", layout_model_type, table_enable)
+        log.info("LayoutMarkdownConverter initialized, layout_model={}, table_enable={}", layout_model_type, table_enable)
 
     def convert_file(
         self,
@@ -200,7 +200,7 @@ class LayoutMarkdownConverter:
 
         output_path.write_text(result.markdown, encoding="utf-8")
         elapsed = time.time() - start
-        log.info("文档转换完成: {} -> {}, 耗时: {:.2f}s", input_path, output_md_path, elapsed)
+        log.info("Document converted: {} -> {}, time: {:.2f}s", input_path, output_md_path, elapsed)
         return {
             "markdown": result.markdown,
             "markdown_path": str(output_path),

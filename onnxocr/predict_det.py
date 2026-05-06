@@ -41,17 +41,17 @@ class TextDetector(PredictBase):
         postprocess_params["score_mode"] = args.det_db_score_mode
         postprocess_params["box_type"] = args.det_box_type
 
-        # 实例化预处理操作类
+        # Instantiate preprocess ops
         self.preprocess_op = create_operators(pre_process_list)
         # self.postprocess_op = build_post_process(postprocess_params)
-        # 实例化后处理操作类
+        # Instantiate postprocess ops
         self.postprocess_op = DBPostProcess(**postprocess_params)
 
-        # 初始化模型
+        # Initialize model
         self.det_onnx_session = self.get_onnx_session(args.det_model_dir, args.use_gpu, gpu_id = args.gpu_id)
         self.det_input_name = self.get_input_name(self.det_onnx_session)
         self.det_output_name = self.get_output_name(self.det_onnx_session)
-        log.info("检测模型加载完成: {}", args.det_model_dir)
+        log.info("Detection model loaded: {}", args.det_model_dir)
 
     def order_points_clockwise(self, pts):
         rect = np.zeros((4, 2), dtype="float32")
@@ -112,7 +112,7 @@ class TextDetector(PredictBase):
         input_feed = self.get_input_feed(self.det_input_name, img)
         t0 = time.time()
         outputs = self.det_onnx_session.run(self.det_output_name, input_feed=input_feed)
-        log.debug("检测推理耗时: {:.3f}s", time.time() - t0)
+        log.debug("Detection inference time: {:.3f}s", time.time() - t0)
 
         preds = {}
         preds["maps"] = outputs[0]
