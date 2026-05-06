@@ -2,7 +2,7 @@ flask
 gunicorn
 opencv-python-headless
 opencv-contrib-python-headless
-onnxruntime
+onnxruntime-gpu==1.16
 requests
 shapely
 pyclipper
