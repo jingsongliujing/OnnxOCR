@@ -1,8 +1,13 @@
+import os
 import platform
 from enum import Enum
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import onnxruntime
+
+from .logger import get_logger
+
+log = get_logger("inference_engine")
 
 
 Provider = Union[str, Tuple[str, Dict[str, Any]]]
@@ -131,13 +136,23 @@ def create_session(
     gpu_id: int = 0,
     sess_options: Optional[SessionOptions] = None,
 ) -> InferenceSession:
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(
+            f"Model file not found: {model_path}. "
+            f"Please download models first: python scripts/download_models.py"
+        )
     session_providers = build_providers(
         use_gpu=use_gpu,
         gpu_id=gpu_id,
         providers=providers,
     )
-    return InferenceSession(
-        model_path,
-        sess_options=sess_options,
-        providers=session_providers,
-    )
+    log.info("Creating ONNX session: {}, providers={}", model_path, session_providers)
+    try:
+        return InferenceSession(
+            model_path,
+            sess_options=sess_options,
+            providers=session_providers,
+        )
+    except Exception as e:
+        log.error("Failed to load model: {}, error: {}", model_path, e)
+        raise

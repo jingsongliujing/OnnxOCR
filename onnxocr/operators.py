@@ -3,6 +3,10 @@ import cv2
 import sys
 import math
 
+from .logger import get_logger
+
+log = get_logger("operators")
+
 
 class NormalizeImage(object):
     """ normalize image such as substract mean, divide std
@@ -130,9 +134,9 @@ class DetResizeForTest(object):
             if int(resize_w) <= 0 or int(resize_h) <= 0:
                 return None, (None, None)
             img = cv2.resize(img, (int(resize_w), int(resize_h)))
-        except:
-            print(img.shape, resize_w, resize_h)
-            sys.exit(0)
+        except Exception as e:
+            log.error("Image resize failed: shape={}, target=({},{}) error: {}", img.shape, resize_w, resize_h, e)
+            raise RuntimeError(f"Image resize failed: shape={img.shape}, target=({resize_w}, {resize_h})") from e
         ratio_h = resize_h / float(h)
         ratio_w = resize_w / float(w)
         return img, [ratio_h, ratio_w]

@@ -5,7 +5,11 @@ import math
 from PIL import Image, ImageDraw, ImageFont
 from pathlib import Path
 
-# 获取当前文件所在的目录
+from .logger import get_logger
+
+log = get_logger("utils")
+
+# Current module directory
 module_dir = Path(__file__).resolve().parent
 
 

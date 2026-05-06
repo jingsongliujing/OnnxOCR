@@ -4,8 +4,11 @@ import copy
 from . import predict_det
 from . import predict_cls
 from . import predict_rec
+from .logger import get_logger
 from .orientation import RapidOrientationClassifier
 from .utils import get_rotate_crop_image, get_minarea_rect_crop
+
+log = get_logger("predict_system")
 
 
 class TextSystem(object):
@@ -38,17 +41,19 @@ class TextSystem(object):
 
     def __call__(self, img, cls=True):
         ori_im = img.copy()
-        # 文字检测
+        log.debug("OCR pipeline started, image shape: {}", img.shape)
+        # Text detection
         dt_boxes = self.text_detector(img)
 
         if dt_boxes is None:
+            log.warning("No text regions detected")
             return None, None
 
         img_crop_list = []
 
         dt_boxes = sorted_boxes(dt_boxes)
 
-        # 图片裁剪
+        # Image crop
         for bno in range(len(dt_boxes)):
             tmp_box = copy.deepcopy(dt_boxes[bno])
             if self.args.det_box_type == "quad":
@@ -57,11 +62,11 @@ class TextSystem(object):
                 img_crop = get_minarea_rect_crop(ori_im, tmp_box)
             img_crop_list.append(img_crop)
 
-        # 方向分类
+        # Orientation classification
         if self.use_angle_cls and cls:
             img_crop_list, angle_list = self.text_classifier(img_crop_list)
 
-        # 图像识别
+        # Text recognition
         rec_res = self.text_recognizer(img_crop_list)
 
         if self.args.save_crop_res:
@@ -73,6 +78,7 @@ class TextSystem(object):
                 filter_boxes.append(box)
                 filter_rec_res.append(rec_result)
 
+        log.debug("OCR pipeline done, {} regions detected, {} kept", len(dt_boxes), len(filter_boxes))
         return filter_boxes, filter_rec_res
 
 

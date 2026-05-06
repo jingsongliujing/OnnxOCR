@@ -5,7 +5,10 @@ from PIL import Image
 
 
 from .rec_postprocess import CTCLabelDecode
+from .logger import get_logger
 from .predict_base import PredictBase
+
+log = get_logger("predict_rec")
 
 
 class TextRecognizer(PredictBase):
@@ -18,10 +21,11 @@ class TextRecognizer(PredictBase):
             use_space_char=args.use_space_char,
         )
 
-        # 初始化模型
+        # Initialize model
         self.rec_onnx_session = self.get_onnx_session(args.rec_model_dir, args.use_gpu, gpu_id = args.gpu_id)
         self.rec_input_name = self.get_input_name(self.rec_onnx_session)
         self.rec_output_name = self.get_output_name(self.rec_onnx_session)
+        log.info("Recognition model loaded: {}", args.rec_model_dir)
 
     def resize_norm_img(self, img, max_wh_ratio):
         imgC, imgH, imgW = self.rec_image_shape
@@ -53,12 +57,6 @@ class TextRecognizer(PredictBase):
 
         assert imgC == img.shape[2]
         imgW = int((imgH * max_wh_ratio))
-
-        # w = self.rec_onnx_session.get_inputs()[0].shape[3:][0]
-        # w = self.rec_onnx_session.get_inputs()[0].shape[3:][0]
-        # print(w)
-        # if w is not None and w > 0:
-        #     imgW = w
 
         h, w = img.shape[:2]
         ratio = w / float(h)
@@ -306,12 +304,6 @@ class TextRecognizer(PredictBase):
             norm_img_batch = np.concatenate(norm_img_batch)
             norm_img_batch = norm_img_batch.copy()
 
-            # img = img[:, :, ::-1].transpose(2, 0, 1)
-            # img = img[:, :, ::-1]
-            # img = img.transpose(2, 0, 1)
-            # img = img.astype(np.float32)
-            # img = np.expand_dims(img, axis=0)
-            # print(img.shape)
             input_feed = self.get_input_feed(self.rec_input_name, norm_img_batch)
             outputs = self.rec_onnx_session.run(
                 self.rec_output_name, input_feed=input_feed

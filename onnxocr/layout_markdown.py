@@ -1,10 +1,14 @@
-﻿import os
+import os
 import time
 from pathlib import Path
 from typing import Dict, List, Optional
 
 import cv2
 import numpy as np
+
+from .logger import get_logger
+
+log = get_logger("layout_markdown")
 
 
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff", ".webp"}
@@ -63,6 +67,7 @@ class LayoutMarkdownConverter:
             table_model_type=table_model_type,
             table_engine_cfg=table_engine_cfg or {},
         )
+        log.info("LayoutMarkdownConverter initialized, layout_model={}, table_enable={}", layout_model_type, table_enable)
 
     def convert_file(
         self,
@@ -194,6 +199,8 @@ class LayoutMarkdownConverter:
             save_path.write_bytes(data)
 
         output_path.write_text(result.markdown, encoding="utf-8")
+        elapsed = time.time() - start
+        log.info("Document converted: {} -> {}, time: {:.2f}s", input_path, output_md_path, elapsed)
         return {
             "markdown": result.markdown,
             "markdown_path": str(output_path),
