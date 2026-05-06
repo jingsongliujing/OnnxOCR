@@ -1,5 +1,6 @@
 import argparse
 import time
+from pathlib import Path
 
 from .layout_recognition import LayoutRecognizer
 from .license_plate import LicensePlateRecognizer
@@ -169,9 +170,11 @@ if __name__ == "__main__":
 
     model = ONNXPaddleOcr(use_angle_cls=True, use_gpu=False)
 
-    img = cv2.imread(
-        "/data2/liujingsong3/fiber_box/test/img/20230531230052008263304.jpg"
-    )
+    test_img = str(Path(__file__).resolve().parent / "test_images" / "715873facf064583b44ef28295126fa7.jpg")
+    img = cv2.imread(test_img)
+    if img is None:
+        log.error("Test image not found: {}", test_img)
+        raise SystemExit(1)
     s = time.time()
     result = model.ocr(img)
     e = time.time()

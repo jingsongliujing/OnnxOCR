@@ -219,7 +219,6 @@ class OCRLogic:
             use_gpu: Whether to enable GPU inference.
         """
         import os
-        import tkinter.messagebox as messagebox
         base_model_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "onnxocr", "models"))
         model_map = {
             "PP-OCRv5": "ppocrv5",
