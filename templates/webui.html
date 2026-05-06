@@ -1,245 +1,832 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8" />
-    <title>OnnxOCR Web UI</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OnnxOCR</title>
     <link rel="stylesheet" href="/static/webui.css">
 </head>
 <body>
-<div class="container">
-    <h2>OnnxOCR Web UI</h2>
-    <form id="ocrForm">
-        <div class="form-row" style="justify-content: flex-start;">
-            <label for="modelSelect">选择模型：</label>
-            <select id="modelSelect" name="model_name">
-                <option value="PP-OCRv5">PP-OCRv5</option>
-                <option value="PP-OCRv4">PP-OCRv4</option>
-                <option value="ch_ppocr_server_v2.0">ch_ppocr_server_v2.0</option>
+    <!-- Header -->
+    <header class="app-header">
+        <a class="app-logo" href="/">
+            <div class="app-logo-icon">OCR</div>
+            <span class="app-logo-text">OnnxOCR</span>
+        </a>
+        <div class="header-controls">
+            <select id="modelSelect" class="header-select" data-i18n-title="ocrModel" title="OCR Model">
+                {% for m in model_options %}
+                <option value="{{ m }}">{{ m }}</option>
+                {% endfor %}
             </select>
-            <button type="button" id="clearBtn">清除</button>
+            <button class="lang-toggle" id="langToggle" title="中文 / English">
+                <span id="langLabel">EN</span>
+            </button>
+            <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+                <svg id="iconSun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                <svg id="iconMoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+            </button>
         </div>
-        <div class="form-row">
-            <div id="dropZone" class="drop-zone">点击或拖拽图片/PDF文件到此处（可多选）</div>
-            <input id="fileInput" type="file" name="files" multiple accept="image/*,.pdf" />
-        </div>
-        <div class="form-row">
-            <ul id="fileList"></ul>
-        </div>
-        <div class="form-row button-row">
-            <button type="submit">开始识别</button>
-        </div>
-    </form>
-    <div id="previewArea"></div>
-    <div id="progressArea">
-        <div id="progressText"></div>
-        <div class="progress-bar-bg"><div class="progress-bar" id="progressBar"></div></div>
-        <div id="elapsedTime"></div>
-    </div>
-    <div class="download-row">
-        <button id="downloadBtn">下载全部TXT（压缩包）</button>
-    </div>
-    <div id="loading">正在识别，请稍候...</div>
-    <div id="resultArea"></div>
-</div>
-<div id="globalTip" style="display:none;position:fixed;top:32px;right:32px;z-index:9999;min-width:120px;padding:12px 28px;background:#7b8cff;color:#fff;border-radius:8px;box-shadow:0 2px 8px #7b8cff22;font-size:1.08rem;transition:opacity 0.3s;opacity:0;"></div>
+    </header>
+
+    <!-- Tab Bar -->
+    <nav class="tab-bar" id="tabBar">
+        <button class="tab-item active" data-tab="general">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <span data-i18n="tabGeneral">General OCR</span>
+        </button>
+        <button class="tab-item" data-tab="plate">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="10" rx="2"/><line x1="6" y1="10" x2="6" y2="14"/><line x1="10" y1="10" x2="10" y2="14"/><line x1="14" y1="10" x2="14" y2="14"/><line x1="18" y1="10" x2="18" y2="14"/></svg>
+            <span data-i18n="tabPlate">Plate</span>
+        </button>
+        <button class="tab-item" data-tab="table">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+            <span data-i18n="tabTable">Table</span>
+        </button>
+        <button class="tab-item" data-tab="layout">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="3" y="3" width="10" height="10"/><line x1="13" y1="13" x2="21" y2="13"/></svg>
+            <span data-i18n="tabLayout">Layout</span>
+        </button>
+        <button class="tab-item" data-tab="markdown">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M16 13l-4 4"/><path d="M12 13l4 4"/></svg>
+            <span data-i18n="tabMarkdown">Markdown</span>
+        </button>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="app-main">
+        <!-- Upload Section -->
+        <section class="upload-section" id="uploadSection">
+            <div class="drop-zone" id="dropZone">
+                <div class="drop-zone-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                </div>
+                <div class="drop-zone-title"><span data-i18n="dropHere">Drop image here or</span> <span class="browse-link" id="browseLink" data-i18n="browse">browse</span></div>
+                <div class="drop-zone-hint" data-i18n="supportedFormats">Supports JPG, PNG, BMP</div>
+            </div>
+            <input type="file" accept="image/*" class="file-input" id="fileInput">
+        </section>
+
+        <!-- Workspace (hidden until image loaded) -->
+        <section class="workspace" id="workspace">
+            <!-- Left Panel: toolbar + image preview -->
+            <div class="left-panel">
+                <div class="canvas-toolbar">
+                    <button class="btn btn-primary" id="btnRecognize" title="Recognize full image">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        <span data-i18n="recognize">Recognize</span>
+                    </button>
+                    <button class="btn" id="btnRecognizeRegion" title="Draw a region and recognize" style="display:none">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3h14v14"/><path d="M3 5h14v14"/></svg>
+                        <span data-i18n="selection">Selection</span>
+                    </button>
+                    <div class="spacer"></div>
+                    <button class="btn btn-icon" id="btnZoomIn" title="Zoom in">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                    </button>
+                    <button class="btn btn-icon" id="btnZoomOut" title="Zoom out">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                    </button>
+                    <button class="btn btn-icon" id="btnZoomReset" title="Reset zoom">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 109-9"/><polyline points="3 3 3 9 9 9"/></svg>
+                    </button>
+                    <button class="btn btn-icon" id="btnClear" title="Clear image">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+                    </button>
+                </div>
+                <div class="image-preview-area" id="canvasWrap">
+                    <canvas id="mainCanvas"></canvas>
+                    <div class="canvas-selection" id="canvasSelection"></div>
+                    <div class="loading-overlay" id="canvasLoading">
+                        <div style="text-align:center">
+                            <div class="spinner"></div>
+                            <div class="loading-text" data-i18n="recognizing">Recognizing...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: text results -->
+            <div class="result-panel" id="resultPanel">
+                <div class="result-header">
+                    <span class="result-header-title" id="resultTitle" data-i18n="results">Results</span>
+                    <span class="result-header-time" id="resultTime"></span>
+                </div>
+                <div class="result-body" id="resultBody">
+                    <div class="result-empty" id="resultEmpty">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        <span data-i18n="uploadAndRecognize">Upload an image and click Recognize</span>
+                    </div>
+                </div>
+                <div class="result-footer" id="resultFooter" style="display:none">
+                    <button class="btn btn-sm" id="btnCopy" title="Copy text">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                        <span data-i18n="copy">Copy</span>
+                    </button>
+                    <button class="btn btn-sm" id="btnExportTxt" title="Download as TXT">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        TXT
+                    </button>
+                    <button class="btn btn-sm" id="btnExportWord" title="Download as Word" style="display:none">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        Word
+                    </button>
+                    <button class="btn btn-sm" id="btnExportExcel" title="Download as Excel" style="display:none">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+                        Excel
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
 <script>
-const dropZone = document.getElementById('dropZone');
-const fileInput = document.getElementById('fileInput');
-const ocrForm = document.getElementById('ocrForm');
-const resultArea = document.getElementById('resultArea');
-const downloadBtn = document.getElementById('downloadBtn');
-const loading = document.getElementById('loading');
-const fileList = document.getElementById('fileList');
-const clearBtn = document.getElementById('clearBtn');
-const progressArea = document.getElementById('progressArea');
-const progressBar = document.getElementById('progressBar');
-const progressText = document.getElementById('progressText');
-const elapsedTime = document.getElementById('elapsedTime');
-let lastZipUrl = null;
+/* ===== OnnxOCR Web UI — JavaScript ===== */
 
-function updateFileList() {
-    fileList.innerHTML = '';
-    if (fileInput.files.length === 0) {
-        fileList.innerHTML = '<li style="color:#888;">未选择文件</li>';
-        return;
+// ---- i18n (Internationalization) ----
+const I18N = {
+    _lang: 'en',
+    _dicts: {
+        en: {
+            tabGeneral: 'General OCR',
+            tabPlate: 'Plate',
+            tabTable: 'Table',
+            tabLayout: 'Layout',
+            tabMarkdown: 'Markdown',
+            dropHere: 'Drop image here or',
+            browse: 'browse',
+            supportedFormats: 'Supports JPG, PNG, BMP',
+            recognize: 'Recognize',
+            selection: 'Selection',
+            recognizing: 'Recognizing...',
+            results: 'Results',
+            ocrResults: 'OCR Results',
+            plateResults: 'Plate Results',
+            tableResults: 'Table Results',
+            layoutResults: 'Layout Results',
+            markdownResults: 'Markdown Results',
+            uploadAndRecognize: 'Upload an image and click Recognize',
+            copy: 'Copy',
+            copiedToClipboard: 'Copied to clipboard',
+            copyFailed: 'Copy failed',
+            noTextToCopy: 'No text to copy',
+            noTextToExport: 'No text to export',
+            noTableToExport: 'No table to export',
+            recognized: 'Recognized {n} text blocks',
+            detectedPlates: 'Detected {n} plate(s)',
+            tableRecognized: 'Table recognized',
+            detectedLayout: 'Detected {n} layout regions',
+            markdownGenerated: 'Markdown generated',
+            imageLoaded: 'Image loaded — click Recognize to start',
+            pleaseLoadImage: 'Please load an image first',
+            pleaseDropImage: 'Please drop an image file',
+            failedToLoadImage: 'Failed to load image',
+            confidence: 'Confidence',
+            noMarkdownContent: 'No markdown content',
+            ocrModel: 'OCR Model',
+        },
+        zh: {
+            tabGeneral: '通用 OCR',
+            tabPlate: '车牌识别',
+            tabTable: '表格识别',
+            tabLayout: '版面分析',
+            tabMarkdown: 'Markdown',
+            dropHere: '拖拽图片到此处或',
+            browse: '浏览',
+            supportedFormats: '支持 JPG、PNG、BMP',
+            recognize: '识别',
+            selection: '框选',
+            recognizing: '识别中...',
+            results: '结果',
+            ocrResults: 'OCR 识别结果',
+            plateResults: '车牌识别结果',
+            tableResults: '表格识别结果',
+            layoutResults: '版面分析结果',
+            markdownResults: 'Markdown 结果',
+            uploadAndRecognize: '上传图片后点击识别',
+            copy: '复制',
+            copiedToClipboard: '已复制到剪贴板',
+            copyFailed: '复制失败',
+            noTextToCopy: '没有可复制的文本',
+            noTextToExport: '没有可导出的文本',
+            noTableToExport: '没有可导出的表格',
+            recognized: '识别到 {n} 个文本块',
+            detectedPlates: '检测到 {n} 个车牌',
+            tableRecognized: '表格识别完成',
+            detectedLayout: '检测到 {n} 个版面区域',
+            markdownGenerated: 'Markdown 已生成',
+            imageLoaded: '图片已加载 — 点击识别开始',
+            pleaseLoadImage: '请先加载图片',
+            pleaseDropImage: '请拖入图片文件',
+            failedToLoadImage: '图片加载失败',
+            confidence: '置信度',
+            noMarkdownContent: '无 Markdown 内容',
+            ocrModel: 'OCR 模型',
+        },
+    },
+    init() {
+        const saved = localStorage.getItem('onnxocr-lang') || 'en';
+        this._lang = saved;
+        this.apply();
+        document.getElementById('langToggle').addEventListener('click', () => {
+            this._lang = this._lang === 'en' ? 'zh' : 'en';
+            localStorage.setItem('onnxocr-lang', this._lang);
+            this.apply();
+        });
+    },
+    t(key, params) {
+        let text = this._dicts[this._lang]?.[key] || this._dicts.en[key] || key;
+        if (params) {
+            Object.keys(params).forEach(k => { text = text.replace(`{${k}}`, params[k]); });
+        }
+        return text;
+    },
+    apply() {
+        document.getElementById('langLabel').textContent = this._lang === 'en' ? 'EN' : '中';
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            el.textContent = this.t(key);
+        });
+        document.querySelectorAll('[data-i18n-title]').forEach(el => {
+            const key = el.getAttribute('data-i18n-title');
+            el.title = this.t(key);
+        });
+    },
+    get lang() { return this._lang; },
+};
+
+// ---- Toast Notification ----
+const Toast = {
+    container: document.getElementById('toastContainer'),
+    show(message, type = 'info', duration = 3000) {
+        const el = document.createElement('div');
+        el.className = `toast toast-${type}`;
+        el.textContent = message;
+        this.container.appendChild(el);
+        setTimeout(() => {
+            el.classList.add('toast-out');
+            el.addEventListener('animationend', () => el.remove());
+        }, duration);
+    },
+    success(msg) { this.show(msg, 'success'); },
+    error(msg) { this.show(msg, 'error', 5000); },
+    warning(msg) { this.show(msg, 'warning'); },
+    info(msg) { this.show(msg, 'info'); },
+};
+
+// ---- Theme Manager ----
+const ThemeManager = {
+    init() {
+        const saved = localStorage.getItem('onnxocr-theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const theme = saved || (prefersDark ? 'dark' : 'light');
+        this.apply(theme);
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            const current = document.documentElement.getAttribute('data-theme');
+            this.apply(current === 'dark' ? 'light' : 'dark');
+        });
+    },
+    apply(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('onnxocr-theme', theme);
+        document.getElementById('iconSun').style.display = theme === 'dark' ? 'none' : 'block';
+        document.getElementById('iconMoon').style.display = theme === 'dark' ? 'block' : 'none';
+    },
+};
+
+// ---- Tab Manager ----
+const TabManager = {
+    current: 'general',
+    init() {
+        document.querySelectorAll('.tab-item').forEach(btn => {
+            btn.addEventListener('click', () => this.switch(btn.dataset.tab));
+        });
+    },
+    switch(tab) {
+        this.current = tab;
+        document.querySelectorAll('.tab-item').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+        document.getElementById('btnRecognizeRegion').style.display = tab === 'general' ? '' : 'none';
+        document.getElementById('btnExportWord').style.display = (tab === 'general' || tab === 'plate') ? '' : 'none';
+        document.getElementById('btnExportExcel').style.display = tab === 'table' ? '' : 'none';
+        ResultRenderer.clear();
+    },
+};
+
+// ---- Image Canvas ----
+class ImageCanvas {
+    constructor() {
+        this.canvas = document.getElementById('mainCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.wrap = document.getElementById('canvasWrap');
+        this.img = null;
+        this.scale = 1;
+        this.isPanning = false;
+        this.panStartX = 0;
+        this.panStartY = 0;
+        this.isSelecting = false;
+        this.selStartX = 0;
+        this.selStartY = 0;
+        this.selectionRect = null;
+        this.boxes = [];
+        this.MAX_DIM = 4000;
+        this._bindEvents();
     }
-    for (const file of fileInput.files) {
-        const li = document.createElement('li');
-        li.textContent = file.name;
-        fileList.appendChild(li);
+
+    _bindEvents() {
+        this.canvas.addEventListener('wheel', e => this._onWheel(e), { passive: false });
+        this.canvas.addEventListener('mousedown', e => this._onMouseDown(e));
+        this.canvas.addEventListener('mousemove', e => this._onMouseMove(e));
+        this.canvas.addEventListener('mouseup', e => this._onMouseUp(e));
+        this.canvas.addEventListener('mouseleave', e => this._onMouseUp(e));
+        document.getElementById('btnZoomIn').addEventListener('click', () => this.zoomBy(1.2));
+        document.getElementById('btnZoomOut').addEventListener('click', () => this.zoomBy(0.8));
+        document.getElementById('btnZoomReset').addEventListener('click', () => this.zoomReset());
+    }
+
+    loadImage(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = e => {
+                const img = new Image();
+                img.onload = () => { this._setImage(img); resolve(); };
+                img.onerror = () => reject(new Error(I18N.t('failedToLoadImage')));
+                img.src = e.target.result;
+            };
+            reader.onerror = () => reject(new Error(I18N.t('failedToLoadImage')));
+            reader.readAsDataURL(file);
+        });
+    }
+
+    loadImageFromBase64(b64) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => { this._setImage(img); resolve(); };
+            img.onerror = () => reject(new Error(I18N.t('failedToLoadImage')));
+            img.src = 'data:image/png;base64,' + b64;
+        });
+    }
+
+    _setImage(img) {
+        this.img = img;
+        this.boxes = [];
+        this.selectionRect = null;
+        this._fitCanvas();
+        this.render();
+    }
+
+    _fitCanvas() {
+        if (!this.img) return;
+        const wrapRect = this.wrap.getBoundingClientRect();
+        const cw = wrapRect.width;
+        const ch = wrapRect.height;
+        let iw = this.img.naturalWidth;
+        let ih = this.img.naturalHeight;
+        if (iw > this.MAX_DIM || ih > this.MAX_DIM) {
+            const ratio = Math.min(this.MAX_DIM / iw, this.MAX_DIM / ih);
+            iw = Math.round(iw * ratio);
+            ih = Math.round(ih * ratio);
+        }
+        const scale = Math.min(cw / iw, ch / ih, 1);
+        this.canvas.width = Math.round(iw * scale);
+        this.canvas.height = Math.round(ih * scale);
+        this.scale = 1;
+    }
+
+    render() {
+        if (!this.img) return;
+        const ctx = this.ctx;
+        ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        ctx.drawImage(this.img, 0, 0, this.canvas.width, this.canvas.height);
+        this._drawBoxes();
+    }
+
+    _drawBoxes() {
+        if (!this.boxes.length) return;
+        const ctx = this.ctx;
+        const sx = this.canvas.width / this.img.naturalWidth;
+        const sy = this.canvas.height / this.img.naturalHeight;
+        this.boxes.forEach((box, i) => {
+            const pts = box.bounding_box;
+            if (!pts || pts.length !== 4) return;
+            ctx.beginPath();
+            ctx.moveTo(pts[0][0] * sx, pts[0][1] * sy);
+            for (let k = 1; k < 4; k++) ctx.lineTo(pts[k][0] * sx, pts[k][1] * sy);
+            ctx.closePath();
+            ctx.strokeStyle = 'rgba(79,70,229,0.8)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.fillStyle = 'rgba(79,70,229,0.12)';
+            ctx.fill();
+            ctx.fillStyle = 'rgba(79,70,229,0.9)';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.fillText(String(i + 1), pts[0][0] * sx + 3, pts[0][1] * sy - 4);
+        });
+    }
+
+    highlightBox(index) {
+        this.render();
+        if (index < 0 || index >= this.boxes.length) return;
+        const box = this.boxes[index];
+        const pts = box.bounding_box;
+        if (!pts || pts.length !== 4) return;
+        const sx = this.canvas.width / this.img.naturalWidth;
+        const sy = this.canvas.height / this.img.naturalHeight;
+        const ctx = this.ctx;
+        ctx.beginPath();
+        ctx.moveTo(pts[0][0] * sx, pts[0][1] * sy);
+        for (let k = 1; k < 4; k++) ctx.lineTo(pts[k][0] * sx, pts[k][1] * sy);
+        ctx.closePath();
+        ctx.strokeStyle = '#EF4444';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(239,68,68,0.25)';
+        ctx.fill();
+    }
+
+    setBoxes(boxes) { this.boxes = boxes; this.render(); }
+
+    zoomBy(factor) {
+        if (!this.img) return;
+        this.canvas.width = Math.round(this.canvas.width * factor);
+        this.canvas.height = Math.round(this.canvas.height * factor);
+        this.render();
+    }
+
+    zoomReset() { this._fitCanvas(); this.render(); }
+
+    _onWheel(e) { e.preventDefault(); this.zoomBy(e.deltaY < 0 ? 1.1 : 0.9); }
+
+    _onMouseDown(e) {
+        if (e.button === 1) {
+            e.preventDefault();
+            this.isPanning = true;
+            this.panStartX = e.clientX;
+            this.panStartY = e.clientY;
+        } else if (e.button === 0 && TabManager.current === 'general') {
+            const rect = this.canvas.getBoundingClientRect();
+            this.isSelecting = true;
+            this.selStartX = e.clientX - rect.left;
+            this.selStartY = e.clientY - rect.top;
+            this.selectionRect = null;
+            document.getElementById('canvasSelection').style.display = 'none';
+        }
+    }
+
+    _onMouseMove(e) {
+        if (this.isPanning) {
+            const dx = e.clientX - this.panStartX;
+            const dy = e.clientY - this.panStartY;
+            this.panStartX = e.clientX;
+            this.panStartY = e.clientY;
+            this.canvas.style.transform = (this.canvas.style.transform || '') + ` translate(${dx}px,${dy}px)`;
+        }
+        if (this.isSelecting) {
+            const rect = this.canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const selEl = document.getElementById('canvasSelection');
+            selEl.style.display = 'block';
+            selEl.style.left = Math.min(this.selStartX, x) + 'px';
+            selEl.style.top = Math.min(this.selStartY, y) + 'px';
+            selEl.style.width = Math.abs(x - this.selStartX) + 'px';
+            selEl.style.height = Math.abs(y - this.selStartY) + 'px';
+        }
+    }
+
+    _onMouseUp(e) {
+        if (this.isPanning) this.isPanning = false;
+        if (this.isSelecting) {
+            this.isSelecting = false;
+            const rect = this.canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const sx = Math.min(this.selStartX, x);
+            const sy = Math.min(this.selStartY, y);
+            const sw = Math.abs(x - this.selStartX);
+            const sh = Math.abs(y - this.selStartY);
+            if (sw > 10 && sh > 10) {
+                const rx = sx / this.canvas.width;
+                const ry = sy / this.canvas.height;
+                const rw = sw / this.canvas.width;
+                const rh = sh / this.canvas.height;
+                this.selectionRect = { x: Math.round(rx * this.img.naturalWidth), y: Math.round(ry * this.img.naturalHeight), w: Math.round(rw * this.img.naturalWidth), h: Math.round(rh * this.img.naturalHeight) };
+            } else {
+                this.selectionRect = null;
+                document.getElementById('canvasSelection').style.display = 'none';
+            }
+        }
+    }
+
+    clearSelection() { this.selectionRect = null; document.getElementById('canvasSelection').style.display = 'none'; }
+
+    clear() {
+        this.img = null;
+        this.boxes = [];
+        this.selectionRect = null;
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.canvas.style.transform = '';
+    }
+
+    toBase64() {
+        if (!this.img) return null;
+        const tmpCanvas = document.createElement('canvas');
+        const sel = this.selectionRect;
+        if (sel) {
+            tmpCanvas.width = sel.w;
+            tmpCanvas.height = sel.h;
+            tmpCanvas.getContext('2d').drawImage(this.img, sel.x, sel.y, sel.w, sel.h, 0, 0, sel.w, sel.h);
+        } else {
+            tmpCanvas.width = this.img.naturalWidth;
+            tmpCanvas.height = this.img.naturalHeight;
+            tmpCanvas.getContext('2d').drawImage(this.img, 0, 0);
+        }
+        return tmpCanvas.toDataURL('image/png').split(',')[1];
     }
 }
 
-// 拖拽上传
-['dragenter','dragover'].forEach(evt => dropZone.addEventListener(evt, e => {
-    e.preventDefault();
-    dropZone.classList.add('dragover');
-}));
-['dragleave','drop'].forEach(evt => dropZone.addEventListener(evt, e => {
-    e.preventDefault();
-    dropZone.classList.remove('dragover');
-}));
-dropZone.addEventListener('click', () => fileInput.click());
-dropZone.addEventListener('drop', e => {
-    fileInput.files = e.dataTransfer.files;
-    updateFileList();
-});
-fileInput.addEventListener('change', updateFileList);
-
-ocrForm.addEventListener('submit', async function(e) {
-    e.preventDefault();
-    if (!fileInput.files.length) {
-        alert('请先选择图片或PDF文件');
-        return;
-    }
-    loading.style.display = 'none'; // 立即隐藏 loading
-    resultArea.innerHTML = '';
-    downloadBtn.style.display = 'none';
-    fileList.innerHTML = '';
-    progressArea.style.display = 'flex';
-    progressBar.style.width = '0%';
-    progressText.textContent = '正在准备识别...';
-    elapsedTime.textContent = '';
-    const startTime = Date.now();
-    const formData = new FormData();
-    for (const file of fileInput.files) {
-        formData.append('files', file);
-    }
-    formData.append('model_name', document.getElementById('modelSelect').value);
-    // 保存所有图片文件的base名和File对象
-    const imageFileMap = {};
-    for (const file of fileInput.files) {
-        if (file.type.startsWith('image/')) {
-            const base = file.name.replace(/\.[^.]+$/, '');
-            imageFileMap[base] = file;
-        }
-    }
-    try {
-        let fakeProgress = 0;
-        const fakeTimer = setInterval(() => {
-            if (fakeProgress < 80) {
-                fakeProgress += Math.random() * 8 + 2;
-                progressBar.style.width = Math.min(fakeProgress, 80) + '%';
-                progressText.textContent = '正在识别文件...';
-            }
-        }, 300);
-        const resp = await fetch('/ocr', { method: 'POST', body: formData });
-        clearInterval(fakeTimer);
-        progressBar.style.width = '100%';
-        progressText.textContent = '识别完成';
+// ---- OCR Client ----
+const OCRClient = {
+    async recognize(endpoint, payload) {
+        const resp = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
         const data = await resp.json();
-        if (!data.success) {
-            progressArea.style.display = 'none';
-            resultArea.innerHTML = `<div style='color:red;'>识别失败：${data.msg || ''}</div>`;
-            lastZipUrl = null;
-            return;
-        }
-        // 多图片多结果展示
-        previewArea.innerHTML = '';
-        resultArea.innerHTML = '';
-        // 构建图片base名到File对象的映射
-        const imgMap = {};
-        for (const file of fileInput.files) {
-            if (file.type.startsWith('image/')) {
-                const base = file.name.replace(/\.[^.]+$/, '');
-                imgMap[base] = file;
-            }
-        }
-        data.results.forEach(r => {
-            const txtBase = r.filename.replace(/\.txt$/, '');
-            const div = document.createElement('div');
-            div.className = 'result-block';
-            let imgHtml = '';
-            if (imgMap[txtBase]) {
-                const url = URL.createObjectURL(imgMap[txtBase]);
-                imgHtml = `<img class=\"ocr-image-preview\" src=\"${url}\" alt=\"${r.filename}\">`;
-            }
-            // 新增复制按钮
-            const copyBtnHtml = `<button class=\"copy-btn\" title=\"复制文本\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 20 20\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect x=\"5\" y=\"5\" width=\"10\" height=\"12\" rx=\"2\" fill=\"#7b8cff\"/><rect x=\"3\" y=\"3\" width=\"10\" height=\"12\" rx=\"2\" stroke=\"#7b8cff\" stroke-width=\"1.5\" fill=\"none\"/></svg></button>`;
-            div.innerHTML = `${imgHtml}<div class=\"ocr-text-content\"><div style=\"display:flex;justify-content:space-between;align-items:flex-start;\"><b>${r.filename}</b>${copyBtnHtml}</div><pre>${r.content}</pre></div>`;
-            resultArea.appendChild(div);
+        if (!resp.ok || data.error) throw new Error(data.error || `Request failed (${resp.status})`);
+        return data;
+    },
+    generalOCR(b64) { return this.recognize('/ocr_api', { image: b64 }); },
+    plateOCR(b64, minScore = 0.4, visualize = true) { return this.recognize('/plate_api', { image: b64, min_score: minScore, visualize }); },
+    tableOCR(b64, visualize = true) { return this.recognize('/table_api', { image: b64, visualize }); },
+    layoutOCR(b64, modelType = 'pp_doclayoutv2', confThresh = 0.4, iouThresh = 0.5, visualize = true) { return this.recognize('/layout_api', { image: b64, model_type: modelType, conf_thresh: confThresh, iou_thresh: iouThresh, visualize }); },
+    layoutMarkdown(b64, modelType = 'pp_layout_cdla', confThresh = 0.5, iouThresh = 0.5, visualize = true) { return this.recognize('/layout_markdown_api', { image: b64, model_type: modelType, conf_thresh: confThresh, iou_thresh: iouThresh, filename: 'output.md', visualize }); },
+};
+
+// ---- Result Renderer ----
+const ResultRenderer = {
+    body: document.getElementById('resultBody'),
+    empty: document.getElementById('resultEmpty'),
+    title: document.getElementById('resultTitle'),
+    time: document.getElementById('resultTime'),
+    footer: document.getElementById('resultFooter'),
+    lastResult: null,
+    lastText: '',
+
+    clear() {
+        this.body.innerHTML = '';
+        this.body.appendChild(this.empty);
+        this.empty.style.display = '';
+        this.title.textContent = I18N.t('results');
+        this.time.textContent = '';
+        this.footer.style.display = 'none';
+        this.lastResult = null;
+        this.lastText = '';
+    },
+
+    _hideEmpty() { this.empty.style.display = 'none'; },
+
+    renderGeneral(data) {
+        this._hideEmpty();
+        this.title.textContent = I18N.t('ocrResults');
+        this.time.textContent = data.processing_time ? `${data.processing_time.toFixed(2)}s` : '';
+        this.footer.style.display = '';
+        this.lastResult = data;
+        const results = data.results || [];
+        let allText = '';
+        const nav = document.createElement('ul');
+        nav.className = 'block-nav';
+        results.forEach((item, i) => {
+            allText += item.text + '\n';
+            const li = document.createElement('li');
+            li.className = 'block-nav-item';
+            li.innerHTML = `<span class="block-index">${i + 1}</span><span class="block-text">${this._esc(item.text)}</span>`;
+            li.addEventListener('click', () => imageCanvas.highlightBox(i));
+            nav.appendChild(li);
         });
-        // 事件委托绑定复制按钮点击事件
-        resultArea.addEventListener('click', function(e) {
-            if (e.target.closest('.copy-btn')) {
-                const btn = e.target.closest('.copy-btn');
-                const pre = btn.closest('.ocr-text-content').querySelector('pre');
-                if (pre) {
-                    navigator.clipboard.writeText(pre.textContent).then(() => {
-                        showTip('复制成功');
-                    }).catch(() => {
-                        showTip('复制失败，请手动复制', '#f87171');
-                    });
-                }
-            }
+        this.lastText = allText.trim();
+        if (imageCanvas.img) imageCanvas.setBoxes(results.filter(r => r.bounding_box && r.bounding_box.length === 4));
+        if (data.visualization) imageCanvas.loadImageFromBase64(data.visualization);
+        this.body.innerHTML = '';
+        this.body.appendChild(nav);
+        Toast.success(I18N.t('recognized', { n: results.length }));
+    },
+
+    renderPlate(data) {
+        this._hideEmpty();
+        this.title.textContent = I18N.t('plateResults');
+        this.time.textContent = data.processing_time ? `${data.processing_time.toFixed(2)}s` : '';
+        this.footer.style.display = '';
+        this.lastResult = data;
+        const results = data.results || [];
+        let allText = '';
+        const div = document.createElement('div');
+        div.className = 'plate-result-list';
+        results.forEach(item => {
+            allText += item.plate_number + '\n';
+            const plate = document.createElement('div');
+            plate.className = 'plate-result';
+            plate.innerHTML = `<div class="plate-number">${this._esc(item.plate_number)}</div><div class="plate-score">${I18N.t('confidence')}: ${(item.confidence * 100).toFixed(1)}%</div>`;
+            div.appendChild(plate);
         });
-        const used = ((Date.now() - startTime) / 1000).toFixed(2);
-        elapsedTime.textContent = `识别总耗时：${used} 秒`;
-        downloadBtn.style.display = 'inline-block';
-        lastZipUrl = data.zip_url || null;
-    } catch (err) {
-        progressArea.style.display = 'none';
-        resultArea.innerHTML = `<div style='color:red;'>请求失败：${err}</div>`;
-    }
-});
+        this.lastText = allText.trim();
+        if (data.visualization) imageCanvas.loadImageFromBase64(data.visualization);
+        this.body.innerHTML = '';
+        this.body.appendChild(div);
+        Toast.success(I18N.t('detectedPlates', { n: results.length }));
+    },
 
-downloadBtn.addEventListener('click', function() {
-    if (lastZipUrl) {
-        // 采用 a 标签下载，兼容所有浏览器
-        const a = document.createElement('a');
-        a.href = lastZipUrl;
-        a.download = '';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-    } else {
-        alert('未找到可下载的压缩包');
-    }
-});
+    renderTable(data) {
+        this._hideEmpty();
+        this.title.textContent = I18N.t('tableResults');
+        this.time.textContent = data.processing_time ? `${data.processing_time.toFixed(2)}s` : '';
+        this.footer.style.display = '';
+        this.lastResult = data;
+        const div = document.createElement('div');
+        if (data.html) {
+            const preview = document.createElement('div');
+            preview.className = 'table-preview';
+            preview.innerHTML = data.html;
+            div.appendChild(preview);
+            this.lastText = this._htmlTableToText(data.html);
+        } else {
+            this.lastText = '';
+        }
+        if (data.visualization) imageCanvas.loadImageFromBase64(data.visualization);
+        this.body.innerHTML = '';
+        this.body.appendChild(div);
+        Toast.success(I18N.t('tableRecognized'));
+    },
 
-clearBtn.addEventListener('click', function() {
-    fileInput.value = '';
-    updateFileList();
-    resultArea.innerHTML = '';
-    downloadBtn.style.display = 'none';
-    previewArea.innerHTML = '';
-    progressArea.style.display = 'none';
-    progressBar.style.width = '0%';
-    progressText.textContent = '';
-    elapsedTime.textContent = '';
-});
+    renderLayout(data) {
+        this._hideEmpty();
+        this.title.textContent = I18N.t('layoutResults');
+        this.time.textContent = data.processing_time ? `${data.processing_time.toFixed(2)}s` : '';
+        this.footer.style.display = '';
+        this.lastResult = data;
+        const div = document.createElement('div');
+        const boxes = data.boxes || [];
+        let allText = '';
+        const nav = document.createElement('ul');
+        nav.className = 'block-nav';
+        boxes.forEach((box, i) => {
+            allText += `[${box.type}] ${I18N.t('confidence')}: ${(box.confidence * 100).toFixed(1)}%\n`;
+            const li = document.createElement('li');
+            li.className = 'block-nav-item';
+            li.innerHTML = `<span class="block-index" style="background:var(--color-accent-light);color:var(--color-accent)">${i + 1}</span><span class="block-text">${box.type} (${(box.confidence * 100).toFixed(1)}%)</span>`;
+            nav.appendChild(li);
+        });
+        this.lastText = allText.trim();
+        div.appendChild(nav);
+        if (data.visualization) imageCanvas.loadImageFromBase64(data.visualization);
+        this.body.innerHTML = '';
+        this.body.appendChild(div);
+        Toast.success(I18N.t('detectedLayout', { n: boxes.length }));
+    },
 
-function showTip(msg, color = '#7b8cff') {
-    const tip = document.getElementById('globalTip');
-    tip.textContent = msg;
-    tip.style.background = color;
-    tip.style.display = 'block';
-    tip.style.opacity = '1';
-    clearTimeout(tip._timer);
-    tip._timer = setTimeout(() => {
-        tip.style.opacity = '0';
-        setTimeout(() => { tip.style.display = 'none'; }, 400);
-    }, 1500);
-}
+    renderMarkdown(data) {
+        this._hideEmpty();
+        this.title.textContent = I18N.t('markdownResults');
+        this.time.textContent = '';
+        this.footer.style.display = '';
+        this.lastResult = data;
+        const div = document.createElement('div');
+        const pages = data.pages || [];
+        let allMd = '';
+        pages.forEach(page => { if (page.markdown) allMd += page.markdown + '\n\n'; });
+        this.lastText = allMd.trim();
+        const preview = document.createElement('div');
+        preview.className = 'markdown-preview';
+        preview.textContent = this.lastText || I18N.t('noMarkdownContent');
+        div.appendChild(preview);
+        if (data.visualization) imageCanvas.loadImageFromBase64(data.visualization);
+        this.body.innerHTML = '';
+        this.body.appendChild(div);
+        Toast.success(I18N.t('markdownGenerated'));
+    },
 
-// 复制按钮事件绑定
-setTimeout(() => {
-    document.querySelectorAll('.copy-btn').forEach(btn => {
-        btn.onclick = function(e) {
-            const pre = btn.closest('.ocr-text-content').querySelector('pre');
-            if (pre) {
-                navigator.clipboard.writeText(pre.textContent).then(() => {
-                    btn.title = '已复制!';
-                    btn.style.background = '#e0eaff';
-                    setTimeout(() => {
-                        btn.title = '复制文本';
-                        btn.style.background = '';
-                    }, 1200);
-                });
+    _esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; },
+    _htmlTableToText(html) {
+        const tmp = document.createElement('div'); tmp.innerHTML = html;
+        const rows = tmp.querySelectorAll('tr');
+        let text = '';
+        rows.forEach(row => { const vals = Array.from(row.querySelectorAll('th, td')).map(c => c.textContent.trim()); text += vals.join('\t') + '\n'; });
+        return text;
+    },
+};
+
+// ---- Export Functions ----
+const ExportManager = {
+    copyText() {
+        const text = ResultRenderer.lastText;
+        if (!text) { Toast.warning(I18N.t('noTextToCopy')); return; }
+        navigator.clipboard.writeText(text).then(() => Toast.success(I18N.t('copiedToClipboard'))).catch(() => Toast.error(I18N.t('copyFailed')));
+    },
+    downloadTxt() {
+        const text = ResultRenderer.lastText;
+        if (!text) { Toast.warning(I18N.t('noTextToExport')); return; }
+        this._downloadBlob(new Blob([text], { type: 'text/plain;charset=utf-8' }), 'ocr_result.txt');
+    },
+    downloadWord() {
+        const text = ResultRenderer.lastText;
+        if (!text) { Toast.warning(I18N.t('noTextToExport')); return; }
+        let html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><style>body{font-family:sans-serif;font-size:12pt}</style></head><body>';
+        text.split('\n').forEach(line => { html += `<p>${line}</p>`; });
+        html += '</body></html>';
+        this._downloadBlob(new Blob([html], { type: 'application/msword' }), 'ocr_result.doc');
+    },
+    downloadExcel() {
+        const result = ResultRenderer.lastResult;
+        if (!result || !result.html) { Toast.warning(I18N.t('noTableToExport')); return; }
+        const tmp = document.createElement('div'); tmp.innerHTML = result.html;
+        const rows = tmp.querySelectorAll('tr');
+        let csv = '';
+        rows.forEach(row => { const vals = Array.from(row.querySelectorAll('th, td')).map(c => `"${c.textContent.trim().replace(/"/g, '""')}"`); csv += vals.join(',') + '\n'; });
+        this._downloadBlob(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }), 'table_result.csv');
+    },
+    _downloadBlob(blob, filename) {
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click(); URL.revokeObjectURL(a.href);
+    },
+};
+
+// ---- App Controller ----
+const imageCanvas = new ImageCanvas();
+
+const App = {
+    currentFile: null,
+    init() {
+        I18N.init();
+        ThemeManager.init();
+        TabManager.init();
+        this._bindUpload();
+        this._bindActions();
+        this._bindExport();
+    },
+    _bindUpload() {
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const browseLink = document.getElementById('browseLink');
+        browseLink.addEventListener('click', e => { e.stopPropagation(); fileInput.click(); });
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault(); dropZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) this._loadFile(file);
+            else Toast.error(I18N.t('pleaseDropImage'));
+        });
+        fileInput.addEventListener('change', () => { if (fileInput.files[0]) this._loadFile(fileInput.files[0]); });
+    },
+    _loadFile(file) {
+        this.currentFile = file;
+        imageCanvas.loadImage(file).then(() => {
+            document.getElementById('uploadSection').style.display = 'none';
+            document.getElementById('workspace').classList.add('visible');
+            ResultRenderer.clear();
+            Toast.info(I18N.t('imageLoaded'));
+        }).catch(err => Toast.error(err.message));
+    },
+    _bindActions() {
+        document.getElementById('btnRecognize').addEventListener('click', () => this._doRecognize(false));
+        document.getElementById('btnRecognizeRegion').addEventListener('click', () => this._doRecognize(true));
+        document.getElementById('btnClear').addEventListener('click', () => this._clear());
+    },
+    _bindExport() {
+        document.getElementById('btnCopy').addEventListener('click', () => ExportManager.copyText());
+        document.getElementById('btnExportTxt').addEventListener('click', () => ExportManager.downloadTxt());
+        document.getElementById('btnExportWord').addEventListener('click', () => ExportManager.downloadWord());
+        document.getElementById('btnExportExcel').addEventListener('click', () => ExportManager.downloadExcel());
+    },
+    async _doRecognize(useSelection) {
+        if (!imageCanvas.img) { Toast.warning(I18N.t('pleaseLoadImage')); return; }
+        if (useSelection) imageCanvas.clearSelection();
+        const loading = document.getElementById('canvasLoading');
+        loading.classList.add('visible');
+        try {
+            const b64 = imageCanvas.toBase64();
+            const tab = TabManager.current;
+            let data;
+            switch (tab) {
+                case 'general': data = await OCRClient.generalOCR(b64); ResultRenderer.renderGeneral(data); break;
+                case 'plate':   data = await OCRClient.plateOCR(b64);   ResultRenderer.renderPlate(data);   break;
+                case 'table':   data = await OCRClient.tableOCR(b64);   ResultRenderer.renderTable(data);   break;
+                case 'layout':  data = await OCRClient.layoutOCR(b64);  ResultRenderer.renderLayout(data);  break;
+                case 'markdown':data = await OCRClient.layoutMarkdown(b64); ResultRenderer.renderMarkdown(data); break;
             }
-        };
-    });
-}, 100);
+        } catch (err) { Toast.error(err.message); }
+        finally { loading.classList.remove('visible'); }
+    },
+    _clear() {
+        imageCanvas.clear();
+        this.currentFile = null;
+        document.getElementById('workspace').classList.remove('visible');
+        document.getElementById('uploadSection').style.display = '';
+        document.getElementById('fileInput').value = '';
+        ResultRenderer.clear();
+    },
+};
+
+document.addEventListener('DOMContentLoaded', () => App.init());
 </script>
 </body>
 </html>
