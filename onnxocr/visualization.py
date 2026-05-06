@@ -5,6 +5,10 @@ import cv2
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
+from .logger import get_logger
+
+log = get_logger("visualization")
+
 
 MODULE_DIR = Path(__file__).resolve().parent
 DEFAULT_FONT_PATH = str(MODULE_DIR / "fonts" / "simfang.ttf")
@@ -14,6 +18,7 @@ def _load_font(font_path: str, size: int):
     try:
         return ImageFont.truetype(font_path, size, encoding="utf-8")
     except Exception:
+        log.warning("字体加载失败，使用默认字体: {}", font_path)
         return ImageFont.load_default()
 
 

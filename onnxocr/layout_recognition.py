@@ -3,7 +3,10 @@ from typing import Dict, Optional
 
 import numpy as np
 
+from .logger import get_logger
 from .rapid_layout import EngineType, ModelType, RapidLayout, RapidLayoutInput
+
+log = get_logger("layout_recognition")
 
 
 LAYOUT_MODEL_PATHS = {
@@ -43,6 +46,7 @@ class LayoutRecognizer:
         self.model_type = model_type
         self.model_path = model_path
         self.layout_engine = RapidLayout(cfg=cfg)
+        log.info("版面分析模型加载完成: type={}, path={}", model_type, model_path)
 
     def recognize(self, img: np.ndarray) -> Dict:
         if img is None or not isinstance(img, np.ndarray):

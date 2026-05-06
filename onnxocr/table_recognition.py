@@ -3,7 +3,10 @@ from typing import Dict, List, Optional
 
 import numpy as np
 
+from .logger import get_logger
 from .rapid_table import ModelType, RapidTable, RapidTableInput
+
+log = get_logger("table_recognition")
 
 
 TABLE_MODEL_PATHS = {
@@ -40,6 +43,7 @@ class TableRecognizer:
         self.model_type = model_type
         self.model_path = model_path
         self.table_engine = RapidTable(input_args)
+        log.info("表格识别模型加载完成: type={}, path={}", model_type, model_path)
 
     def recognize(self, img: np.ndarray, ocr_result: List) -> Dict:
         if img is None or not isinstance(img, np.ndarray):

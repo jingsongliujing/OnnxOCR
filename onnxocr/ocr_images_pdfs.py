@@ -10,6 +10,10 @@ from pathlib import Path
 import time
 import numpy as np
 
+from .logger import get_logger
+
+log = get_logger("ocr_images_pdfs")
+
 # 尝试导入pdf2image用于PDF转图片
 try:
     from pdf2image import convert_from_path
@@ -46,6 +50,7 @@ class OCRLogic:
         """
         self.status_callback = status_callback
         # 默认初始化OCR模型
+        log.info("初始化 OCRLogic，加载默认模型")
         self.model = ONNXPaddleOcr(use_angle_cls=True, use_gpu=False)
 
     def run(self, files: List[str], save_txt: bool, merge_txt: bool, output_img: bool = False, file_time_callback=None, pdf_progress_callback=None, max_workers: int = 4):
@@ -85,11 +90,13 @@ class OCRLogic:
                         img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
                 except Exception as e:
                     self.status_callback(f"图片读取失败: {file}，错误: {e}")
+                    log.error("图片读取失败: {}, 错误: {}", file, e)
                     if file_time_callback:
                         file_time_callback(idx, 0)
                     return (idx, "")
                 if img is None:
                     self.status_callback(f"文件无法读取或不是有效图片: {file}")
+                    log.warning("文件无法读取或不是有效图片: {}", file)
                     if file_time_callback:
                         file_time_callback(idx, 0)
                     return (idx, "")
@@ -119,6 +126,7 @@ class OCRLogic:
                         f.write(text)
                         f.write("\n\n")
         elapsed = time.time() - start_time
+        log.info("批量识别完成，共 {} 个文件，总耗时: {:.2f}秒", len(files), elapsed)
         if files:
             out_dir = self._get_output_dir(files[0])
             self.status_callback(f"识别完成，总耗时：{elapsed:.2f}秒，文件保存在：{out_dir}")
@@ -239,6 +247,7 @@ class OCRLogic:
             ocr_kwargs["rec_model_dir"] = rec_model_dir
         try:
             self.model = ONNXPaddleOcr(**ocr_kwargs)
+            log.info("模型切换成功: {}", model_name)
             if use_gpu:
                 try:
                     providers = self.model.session.get_providers() if hasattr(self.model, 'session') else []
@@ -255,6 +264,7 @@ class OCRLogic:
                     if hasattr(self, 'status_callback'):
                         self.status_callback("[警告] GPU检测异常，已切换为CPU推理。请检查CUDA/cuDNN环境配置。")
         except Exception as e:
+            log.error("模型切换失败: {}, 错误: {}", model_name, e)
             if use_gpu:
                 msg = f"GPU初始化失败，已自动切换为CPU。请检查CUDA/cuDNN环境配置。错误信息: {e}"
                 if hasattr(self, 'ui_ref') and hasattr(self.ui_ref, 'update_gpu_status'):

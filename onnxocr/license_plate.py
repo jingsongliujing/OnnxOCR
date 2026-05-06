@@ -7,6 +7,9 @@ import cv2
 import numpy as np
 
 from .inference_engine import create_session
+from .logger import get_logger
+
+log = get_logger("license_plate")
 
 PLATE_CHARS = (
     "#京沪津渝冀晋蒙辽吉黑苏浙皖闽赣鲁豫鄂湘粤桂琼川贵云藏陕甘青宁新"
@@ -39,6 +42,7 @@ class LicensePlateRecognizer:
         self.session_rec = create_session(
             self.rec_model_path, providers=self.providers
         )
+        log.info("车牌识别模型加载完成: detect={}, rec={}", self.detect_model_path, self.rec_model_path)
 
     def recognize(
         self,

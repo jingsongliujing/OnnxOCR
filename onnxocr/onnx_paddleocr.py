@@ -3,6 +3,7 @@ import time
 
 from .layout_recognition import LayoutRecognizer
 from .license_plate import LicensePlateRecognizer
+from .logger import get_logger
 from .predict_system import TextSystem
 from .table_recognition import TableRecognizer
 from .utils import draw_ocr
@@ -12,6 +13,8 @@ from .visualization import (
     save_plate_visualization,
     save_table_visualization,
 )
+
+log = get_logger("onnx_paddleocr")
 
 
 class ONNXPaddleOcr(TextSystem):
@@ -44,6 +47,7 @@ class ONNXPaddleOcr(TextSystem):
             )
 
         if self.use_plate_recognition:
+            log.info("初始化车牌识别模式")
             self.plate_recognizer = LicensePlateRecognizer(
                 detect_model_path=plate_detect_model_path,
                 rec_model_path=plate_rec_model_path,
@@ -52,6 +56,7 @@ class ONNXPaddleOcr(TextSystem):
             return
 
         if self.use_layout_analysis:
+            log.info("初始化版面分析模式")
             self.layout_recognizer = LayoutRecognizer(
                 model_type=layout_model_type,
                 model_path=layout_model_path,
@@ -71,8 +76,10 @@ class ONNXPaddleOcr(TextSystem):
         params.__dict__.update(**kwargs)
 
         super().__init__(params)
+        log.info("OCR 模型初始化完成: det={}, cls={}, rec={}", True, self.use_angle_cls, True)
         self.table_recognizer = None
         if self.use_table_recognition:
+            log.info("初始化表格识别模式")
             self.table_recognizer = TableRecognizer(
                 model_type=table_model_type,
                 model_path=table_model_path,
@@ -98,7 +105,7 @@ class ONNXPaddleOcr(TextSystem):
 
     def _general_ocr(self, img, det=True, rec=True, cls=True):
         if cls is True and self.use_angle_cls is False:
-            print(
+            log.warning(
                 "Since the angle classifier is not initialized, the angle classifier will not be used during the forward process"
             )
 
@@ -168,9 +175,9 @@ if __name__ == "__main__":
     s = time.time()
     result = model.ocr(img)
     e = time.time()
-    print("total time: {:.3f}".format(e - s))
-    print("result:", result)
+    log.info("total time: {:.3f}", e - s)
+    log.info("result: {}", result)
     for box in result[0]:
-        print(box)
+        log.info("{}", box)
 
     sav2Img(img, result)

@@ -4,7 +4,10 @@ import numpy as np
 import math
 
 from .cls_postprocess import ClsPostProcess
+from .logger import get_logger
 from .predict_base import PredictBase
+
+log = get_logger("predict_cls")
 
 
 class TextClassifier(PredictBase):
@@ -18,6 +21,7 @@ class TextClassifier(PredictBase):
         self.cls_onnx_session = self.get_onnx_session(args.cls_model_dir, args.use_gpu, gpu_id = args.gpu_id)
         self.cls_input_name = self.get_input_name(self.cls_onnx_session)
         self.cls_output_name = self.get_output_name(self.cls_onnx_session)
+        log.info("分类模型加载完成: {}", args.cls_model_dir)
 
     def resize_norm_img(self, img):
         imgC, imgH, imgW = self.cls_image_shape

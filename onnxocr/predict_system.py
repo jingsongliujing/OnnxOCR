@@ -4,8 +4,11 @@ import copy
 from . import predict_det
 from . import predict_cls
 from . import predict_rec
+from .logger import get_logger
 from .orientation import RapidOrientationClassifier
 from .utils import get_rotate_crop_image, get_minarea_rect_crop
+
+log = get_logger("predict_system")
 
 
 class TextSystem(object):
@@ -38,10 +41,12 @@ class TextSystem(object):
 
     def __call__(self, img, cls=True):
         ori_im = img.copy()
+        log.debug("开始 OCR 管道处理, 图像形状: {}", img.shape)
         # 文字检测
         dt_boxes = self.text_detector(img)
 
         if dt_boxes is None:
+            log.warning("未检测到文本区域")
             return None, None
 
         img_crop_list = []
@@ -73,6 +78,7 @@ class TextSystem(object):
                 filter_boxes.append(box)
                 filter_rec_res.append(rec_result)
 
+        log.debug("OCR 管道处理完成, 检测到 {} 个文本区域, 保留 {} 个", len(dt_boxes), len(filter_boxes))
         return filter_boxes, filter_rec_res
 
 
