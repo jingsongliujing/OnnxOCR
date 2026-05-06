@@ -3,12 +3,8 @@ import time
 import zipfile
 from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for
 from werkzeug.utils import secure_filename
-from onnxocr.layout_markdown import LayoutMarkdownConverter
 from onnxocr.ocr_images_pdfs import OCRLogic
-import cv2
-import base64
-import numpy as np
-from onnxocr.onnx_paddleocr import ONNXPaddleOcr
+from onnxocr.api_utils import ModelRegistry, decode_base64_image, format_ocr_results
 from onnxocr.visualization import (
     draw_layout_analysis,
     draw_plate_recognition,
@@ -28,51 +24,7 @@ app = Flask(__name__, static_folder="static", template_folder="templates")
 app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024  # 200MB
 
 ocr_logic = OCRLogic(lambda msg: print(msg))
-# 独立 OCR 模型实例，避免影响 ocr_logic
-ocr_model_api = ONNXPaddleOcr(use_angle_cls=True, use_gpu=False)
-plate_model_api = None
-table_model_api = None
-layout_models_api = {}
-layout_markdown_converters_api = {}
-
-
-def get_plate_model():
-    global plate_model_api
-    if plate_model_api is None:
-        plate_model_api = ONNXPaddleOcr(use_plate_recognition=True, use_gpu=False)
-    return plate_model_api
-
-
-def get_table_model():
-    global table_model_api
-    if table_model_api is None:
-        table_model_api = ONNXPaddleOcr(use_angle_cls=True, use_gpu=False, use_table_recognition=True)
-    return table_model_api
-
-
-def get_layout_model(model_type="pp_layout_cdla", conf_thresh=0.5, iou_thresh=0.5):
-    key = (model_type, float(conf_thresh), float(iou_thresh))
-    if key not in layout_models_api:
-        layout_models_api[key] = ONNXPaddleOcr(
-            use_layout_analysis=True,
-            use_gpu=False,
-            layout_model_type=model_type,
-            layout_conf_thresh=float(conf_thresh),
-            layout_iou_thresh=float(iou_thresh),
-        )
-    return layout_models_api[key]
-
-
-def get_layout_markdown_converter(model_type="pp_doclayoutv2", conf_thresh=0.4, iou_thresh=0.5):
-    key = (model_type, float(conf_thresh), float(iou_thresh))
-    if key not in layout_markdown_converters_api:
-        layout_markdown_converters_api[key] = LayoutMarkdownConverter(
-            layout_model_type=model_type,
-            layout_conf_thresh=float(conf_thresh),
-            layout_iou_thresh=float(iou_thresh),
-            ocr_kwargs={"use_angle_cls": True, "use_gpu": False},
-        )
-    return layout_markdown_converters_api[key]
+models = ModelRegistry(use_gpu=False)
 
 
 def save_upload_file(file, session_dir):
@@ -165,33 +117,16 @@ def ocr_api():
     data = request.get_json()
     if not data or "image" not in data:
         return jsonify({"error": "Invalid request, 'image' field is required."}), 400
-    image_base64 = data["image"]
     try:
-        image_bytes = base64.b64decode(image_base64)
-        image_np = np.frombuffer(image_bytes, dtype=np.uint8)
-        img = cv2.imdecode(image_np, cv2.IMREAD_COLOR)
-        if img is None:
-            return jsonify({"error": "Failed to decode image from base64."}), 400
-    except Exception as e:
+        img = decode_base64_image(data["image"])
+    except (ValueError, Exception) as e:
         return jsonify({"error": f"Image decoding failed: {str(e)}"}), 400
     start_time = time.time()
-    result = ocr_model_api.ocr(img)
-    end_time = time.time()
-    processing_time = end_time - start_time
-    ocr_results = []
-    for line in result[0]:
-        if isinstance(line[0], (list, np.ndarray)):
-            bounding_box = np.array(line[0]).reshape(4, 2).tolist()
-        else:
-            bounding_box = []
-        ocr_results.append({
-            "text": line[1][0],
-            "confidence": float(line[1][1]),
-            "bounding_box": bounding_box
-        })
+    result = models.get_ocr_model().ocr(img)
+    processing_time = time.time() - start_time
     return jsonify({
         "processing_time": processing_time,
-        "results": ocr_results
+        "results": format_ocr_results(result)
     })
 
 @app.route("/plate_api", methods=["POST"])
@@ -205,13 +140,11 @@ def plate_api():
         return jsonify({"error": "'min_score' must be a number."}), 400
     try:
         start_time = time.time()
-        image_bytes = base64.b64decode(data["image"])
-        image_np = np.frombuffer(image_bytes, dtype=np.uint8)
-        img = cv2.imdecode(image_np, cv2.IMREAD_COLOR)
-        if img is None:
-            return jsonify({"error": "Failed to decode image from base64."}), 400
-        results = get_plate_model().ocr(img, plate_min_score=min_score)
+        img = decode_base64_image(data["image"])
+        results = models.get_plate_model().ocr(img, plate_min_score=min_score)
         processing_time = time.time() - start_time
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": f"License plate recognition failed: {str(e)}"}), 500
     response = {
@@ -228,16 +161,12 @@ def table_api():
     if not data or "image" not in data:
         return jsonify({"error": "Invalid request, 'image' field is required."}), 400
     try:
-        image_bytes = base64.b64decode(data["image"])
-        image_np = np.frombuffer(image_bytes, dtype=np.uint8)
-        img = cv2.imdecode(image_np, cv2.IMREAD_COLOR)
-        if img is None:
-            return jsonify({"error": "Failed to decode image from base64."}), 400
-
+        img = decode_base64_image(data["image"])
         start_time = time.time()
-        result = get_table_model().ocr(img)
-        processing_time = time.time() - start_time
-        result["processing_time"] = processing_time
+        result = models.get_table_model().ocr(img)
+        result["processing_time"] = time.time() - start_time
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": f"Table recognition failed: {str(e)}"}), 500
     if data.get("visualize", False):
@@ -252,20 +181,17 @@ def layout_api():
     if not data or "image" not in data:
         return jsonify({"error": "Invalid request, 'image' field is required."}), 400
     try:
-        image_bytes = base64.b64decode(data["image"])
-        image_np = np.frombuffer(image_bytes, dtype=np.uint8)
-        img = cv2.imdecode(image_np, cv2.IMREAD_COLOR)
-        if img is None:
-            return jsonify({"error": "Failed to decode image from base64."}), 400
-
+        img = decode_base64_image(data["image"])
         model_type = data.get("model_type", "pp_doclayoutv2")
         conf_thresh = float(data.get("conf_thresh", 0.4))
         iou_thresh = float(data.get("iou_thresh", 0.5))
         start_time = time.time()
-        result = get_layout_model(model_type, conf_thresh, iou_thresh).ocr(img)
+        result = models.get_layout_model(model_type, conf_thresh, iou_thresh).ocr(img)
         result["processing_time"] = time.time() - start_time
         if data.get("visualize", False):
             result["visualization"] = image_to_base64(draw_layout_analysis(img, result))
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": f"Layout analysis failed: {str(e)}"}), 500
     return jsonify(result)
@@ -277,12 +203,7 @@ def layout_markdown_api():
     if not data or "image" not in data:
         return jsonify({"error": "Invalid request, 'image' field is required."}), 400
     try:
-        image_bytes = base64.b64decode(data["image"])
-        image_np = np.frombuffer(image_bytes, dtype=np.uint8)
-        img = cv2.imdecode(image_np, cv2.IMREAD_COLOR)
-        if img is None:
-            return jsonify({"error": "Failed to decode image from base64."}), 400
-
+        img = decode_base64_image(data["image"])
         model_type = data.get("model_type", "pp_layout_cdla")
         conf_thresh = float(data.get("conf_thresh", 0.5))
         iou_thresh = float(data.get("iou_thresh", 0.5))
@@ -294,13 +215,15 @@ def layout_markdown_api():
             filename = f"{filename}.md"
         output_md_path = os.path.join(session_dir, filename)
 
-        result = get_layout_markdown_converter(model_type, conf_thresh, iou_thresh).convert_images(
+        result = models.get_layout_markdown_converter(model_type, conf_thresh, iou_thresh).convert_images(
             [img],
             output_md_path=output_md_path,
             source_name=os.path.splitext(filename)[0],
         )
         if data.get("visualize", False):
             result["visualization"] = image_to_base64(draw_layout_analysis(img, result["pages"][0]["layout"]))
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": f"Layout markdown failed: {str(e)}"}), 500
     return jsonify(result)
@@ -322,7 +245,7 @@ def layout_markdown_file():
         timestamp = time.strftime("%Y%m%d_%H%M%S")
         session_dir = os.path.join(RESULT_ROOT, timestamp)
         os.makedirs(session_dir, exist_ok=True)
-        converter = get_layout_markdown_converter(model_type, conf_thresh, iou_thresh)
+        converter = models.get_layout_markdown_converter(model_type, conf_thresh, iou_thresh)
 
         results = []
         md_files = []

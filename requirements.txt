@@ -3,7 +3,6 @@ gunicorn
 opencv-python-headless
 opencv-contrib-python-headless
 onnxruntime-gpu==1.16
-onnxruntime
 requests
 shapely
 pyclipper
