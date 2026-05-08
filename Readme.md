@@ -10,6 +10,7 @@ If this project helps you, please consider giving it a **Star**.
 ![GitHub forks](https://img.shields.io/github/forks/jingsongliujing/OnnxOCR?style=social)
 ![GitHub license](https://img.shields.io/github/license/jingsongliujing/OnnxOCR)
 ![Python Version](https://img.shields.io/badge/python-%3E%3D3.8-blue.svg)
+![AtomGit Star](https://atomgit.com/OnnxOCR/OnnxOCR/star/badge.svg)
 
 English | [简体中文](./Readme_cn.md)
 
