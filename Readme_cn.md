@@ -1,4 +1,4 @@
-# OnnxOCR
+﻿# OnnxOCR
 
 如果项目对您有帮助，欢迎点击右上角 **Star** 支持！
 
@@ -15,6 +15,12 @@
 [English](./Readme.md) | 简体中文
 
 ## 版本更新
+
+- **2026.05.15**
+  1. 新增面向 Agent 的 `onnocr` / `onnxocr` 垂直 OCR CLI，支持查看场景、查看 Schema、运行图片识别。
+  2. 内置火车票、试卷、车牌、表格结构化、图片转 Markdown 等已验证场景，身份证和银行卡等隐私/金融场景先作为候选模板提供。
+  3. CLI 兼容 `onnocr onnxocr.skill_cli ...` 显式模块写法，也支持更短的 `onnocr list`、`onnocr run ...`。
+  4. 新增标准 `SkillInput` / `SkillOutput` 契约、注册中心、模板字段抽取、开发文档、示例和轻量测试。
 
 - **2026.05.01**
   1. 新增 ONNX 车牌检测与车牌号识别能力。
@@ -36,11 +42,14 @@
 3. **统一推理引擎**：项目内 ONNX 模型统一通过 `onnxocr/inference_engine.py` 创建 ONNXRuntime Session。
 4. **多语种支持**：单模型支持 5 种文字类型。
 5. **国产化适配友好**：下游厂商适配 GPU/NPU 时，优先修改统一推理引擎即可。
+6. **Agent CLI 可扩展**：行业模板、字段抽取、校验和导出映射独立于底层 ONNX 推理代码，可被 Codex、Claude Code 等工具直接调用。
 
 ## 环境安装
 
 ```bash
 python>=3.8
+git clone https://github.com/jingsongliujing/OnnxOCR.git
+cd OnnxOCR
 pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
 ```
 
@@ -277,6 +286,8 @@ docker run -itd --name onnxocr-service -p 5006:5005 ocr-service
 onnxocr/
   inference_engine.py        # 唯一 ONNXRuntime 入口
   onnx_paddleocr.py          # 用户统一调用入口
+  skill_cli.py               # 垂直 OCR Skill 命令行入口
+  skills/                    # 可扩展 OCR Skill 运行时
   predict_det.py             # 通用 OCR 检测
   predict_rec.py             # 通用 OCR 识别
   orientation.py             # 本地 RapidOrientation ONNX 适配
@@ -290,6 +301,115 @@ onnxocr/
   models/                    # 本地 ONNX 模型
 tests/                       # 独立功能测试
 ```
+
+## 垂直行业 OCR CLI
+
+OnnxOCR 现在提供面向 Agent 的垂直 OCR CLI。它把固定行业模板做成可发现、可测试、可组合的命令行能力，让 Claude Code、Codex 等 Agent 工具无需额外适配即可调用 OnnxOCR。
+
+CLI 层保持轻量：
+
+- ONNX 推理、文本检测识别、表格识别、车牌识别仍由现有 OnnxOCR 引擎负责。
+- 每个垂直场景只负责模板选择、字段抽取、字段归一化、校验、置信度和导出映射。
+- 新行业只需要新增模板工厂并注册，不需要改动底层模型推理代码。
+
+默认启用场景（真实图片烟测通过）：
+
+| Skill ID | 场景 | 输出字段 |
+| --- | --- | --- |
+| `transport.train_ticket` | 火车票 OCR | 票号、出发站、到达站、车次、发车时间、座位、席别、票价 |
+| `education.exam_paper` | 试卷信息 OCR | 标题、年级、科目、考试时间、满分 |
+| `vehicle.plate` | 车牌识别 OCR | 车牌列表和原始车牌模型结果 |
+| `table.structure` | 表格结构化 OCR | HTML、单元格框、逻辑行列坐标 |
+| `document.image_to_markdown` | 图片转 Markdown | Markdown 文件、资源目录、预览文本 |
+
+候选场景（需通过 `--candidates` 查看，等待公开/授权脱敏真实样例验证后再默认启用）：
+
+| Skill ID | 场景 | 输出字段 |
+| --- | --- | --- |
+| `agriculture.quality_inspection` | 农产品质检单 OCR | 产品、批次、检测日期、结果、供应商 |
+| `agriculture.traceability_label` | 农产品溯源标签 OCR | 追溯码、产品、产地、生产者、采摘日期 |
+| `agriculture.plant_protection_record` | 植保作业记录 OCR | 作物、农药、用量、作业人、作业日期 |
+| `oa.reimbursement` | 企业 OA 报销单、行政单据 | 报销人、部门、金额、日期、用途 |
+| `finance.invoice` | 发票 OCR | 发票代码、发票号码、开票日期、购方、销方、金额 |
+| `finance.bank_card` | 银行卡 OCR | 卡号、银行名称、卡组织、有效期 |
+| `identity.id_card` | 中国公民身份证 OCR | 姓名、性别、民族、出生日期、住址、身份证号 |
+| `business.license` | 营业执照 OCR | 统一社会信用代码、名称、类型、法定代表人、住所、成立日期 |
+| `legal.contract_key_info` | 合同关键信息 OCR | 合同编号、甲方、乙方、金额、签署日期 |
+| `government.red_head_document` | 红头文件 OCR | 文号、发文机关、标题、日期 |
+| `logistics.inbound_order` | 物流仓储入库单 OCR | 单号、发货方、收货方、货品、数量 |
+| `logistics.express_waybill` | 快递面单 OCR | 运单号、寄件人、收件人、电话、地址、快递公司 |
+| `medical.lab_report` | 检验报告 OCR | 姓名、报告单号、科室、检验项目、报告日期 |
+| `transport.taxi_invoice` | 出租车票 OCR | 发票代码、号码、信息码、公司、上下车时间、金额 |
+| `vehicle.driving_license` | 行驶证 OCR | 号牌号码、所有人、车辆类型、VIN、注册日期 |
+| `vehicle.driver_license` | 驾驶证 OCR | 姓名、证号、准驾车型、有效期 |
+| `document.pdf_to_markdown` | PDF 转 Markdown | Markdown 文件、资源目录、预览文本 |
+
+命令行：
+
+```bash
+pip install -e .
+
+onnocr list
+onnocr list --candidates
+onnocr schema transport.train_ticket
+onnocr run transport.train_ticket data/samples/scid_train_ticket.jpg --pretty
+```
+
+兼容 Agent 显式模块写法：
+
+```bash
+onnocr onnxocr.skill_cli list
+onnocr onnxocr.skill_cli run vehicle.plate onnxocr/test_images/license_plate_single_blue.jpg --pretty
+```
+
+真实中文图片烟测：
+
+```bash
+onnocr run education.exam_paper onnxocr/test_images/715873facf064583b44ef28295126fa7.jpg --pretty
+```
+
+预期能抽取 `title`、`grade`、`subject`、`time_limit`、`total_score` 等字段。
+
+在 Agent 工具中使用：
+
+1. 让 Claude Code、Codex 等工具先读取 [AGENTS.md](AGENTS.md) 和 [skills/industry-ocr/SKILL.md](skills/industry-ocr/SKILL.md)。
+2. Agent 用 `list` 选择场景，用 `schema` 查看字段，用 `run` 对图片执行结构化 OCR。
+3. 如果字段为空但 `raw_text` 有内容，优先补充 `FieldSpec` 标签、正则或新增行业模板。
+
+Python API：
+
+```python
+from onnxocr.skills import OnnxOCREngine, SkillInput, create_default_registry
+
+engine = OnnxOCREngine()
+registry = create_default_registry()
+skill = registry.get("transport.train_ticket", engine)
+result = skill.run(SkillInput(image_path="sample.jpg"))
+print(result.to_dict())
+```
+
+标准输出示例：
+
+```json
+{
+  "skill_id": "transport.train_ticket",
+  "fields": {
+    "from_station": "鹤壁东站",
+    "to_station": "郑州东站",
+    "train_no": "G1289",
+    "departure_time": "2018年01月05日17:41",
+    "price": "59.5元"
+  },
+  "confidence": 0.85
+}
+```
+
+说明：
+
+- Skill 抽取质量依赖底层 OCR 识别质量；如果图片不符合当前模板，必填字段会返回 `null`，整体置信度会较低。
+- 内置 Skill 中文优先，便于国内贡献者阅读、讨论和补充真实行业模板；英文标签只是兼容别名，用于开源样例和跨境业务。
+- 大模型 Agent 适合开放式理解；OnnxOCR Skill 更适合批量、离线、低成本、可复现、可审计的结构化 OCR。推荐组合方式是：Skill 产出稳定 JSON，Agent 负责复核、纠错、录入和业务流转。
+- Agent 使用方式见 [AGENTS.md](AGENTS.md)，扩展方式见 [docs/skills.md](docs/skills.md) 和 [skills/industry-ocr/SKILL.md](skills/industry-ocr/SKILL.md)。
 
 ## 效果展示
 
@@ -328,4 +448,56 @@ tests/                       # 独立功能测试
 
 ## 贡献指南
 
-欢迎提交 Issues 和 Pull Requests，共同改进项目。
+欢迎提交 Issues 和 Pull Requests，共同改进项目。垂直行业 OCR CLI 的目标不是把所有场景一次性做满，而是把每个真实行业场景做成可安装、可调用、可测试、可复核的稳定能力。
+
+### OnnxOCR CLI 贡献指南
+
+推荐贡献方向：
+
+- **新增垂直场景**：例如农产品质检单、溯源标签、快递面单、营业执照、行驶证、驾驶证、合同关键字段、医疗检验报告等。
+- **完善候选场景**：给 `--candidates` 中已有模板补充真实脱敏样例、字段规则、单元测试和烟测记录。
+- **增强字段抽取**：补充中文标签、英文别名、正则规则、日期/金额/证件号等归一化逻辑。
+- **改进 Agent 体验**：让 `onnocr list`、`schema`、`run` 的输出更适合 Claude Code、Codex 等工具读取和调用。
+- **补充真实评估**：新增公开或授权脱敏样例，并记录哪些字段成功、哪些字段失败、是否能提升为默认场景。
+
+新增一个 CLI 场景时，请按以下步骤提交：
+
+1. 在 `onnxocr/skills/builtin/industry.py` 新增模板工厂函数，使用中文名称、中文说明和领域标签。
+2. 使用 `FieldSpec` 定义字段，字段 ID 使用英文 `snake_case`，字段标签中文优先，可补常见英文别名。
+3. 在 `onnxocr/skills/registry.py` 注册。未通过真实样例验证前，只注册到 `create_candidate_registry()`。
+4. 在 `tests/test_skills.py` 添加不依赖模型文件的假 OCR 行测试，确保字段规则可回归。
+5. 准备公开或授权脱敏样例，放入 `data/samples/`，并在 `data/samples/README.md` 说明来源和用途。
+6. 用真实 OCR 引擎跑 CLI 烟测，并把结果写入 `docs/skill_evaluation.md`。
+7. 更新 `Readme_cn.md`、`Readme.md`、`docs/skills.md` 中的场景表和调用示例。
+
+本地验证命令：
+
+```bash
+pip install -e .
+onnocr list
+onnocr list --candidates
+onnocr schema <skill_id> --candidates
+onnocr run <skill_id> <image_path> --pretty --candidates
+python -B -m pytest tests/test_skills.py -p no:cacheprovider
+```
+
+候选场景提升为默认场景的标准：
+
+- 至少有一个公开或授权脱敏的真实样例，不接受客户真实隐私数据直接入库。
+- 核心必填字段在真实样例上能够稳定抽取，失败字段和原因有记录。
+- 单元测试和 CLI 烟测均通过。
+- 场景边界清晰，不把一个模板写成“万能 OCR”。
+- 文档中说明适合处理什么、不适合处理什么。
+
+隐私和数据要求：
+
+- 不提交身份证、银行卡、合同、医疗报告、快递面单等真实敏感数据。
+- 如需贡献此类场景，请使用公开样张、官方示例或经过授权的脱敏样例。
+- 合成样例可以用于工程链路测试，但不能单独作为默认启用的依据。
+
+设计原则：
+
+- CLI 对 Agent 友好：命令稳定、输出 JSON、错误信息清楚。
+- 中文优先，英文兼容：方便国内开发者贡献，同时不影响开源用户使用。
+- 小模板优先：一个场景解决一个明确问题，避免把规则堆成不可维护的大模板。
+- 可组合：OnnxOCR CLI 负责确定性 OCR 和结构化 JSON，大模型 Agent 负责复核、纠错、录入和业务流转。

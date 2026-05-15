@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "onnxocr"
+version = "0.1.0"
+description = "ONNXRuntime OCR toolkit with extensible Chinese-first vertical OCR skills."
+readme = "Readme.md"
+requires-python = ">=3.8"
+license = { text = "Apache-2.0" }
+authors = [{ name = "OnnxOCR Contributors" }]
+
+[project.scripts]
+onnocr = "onnxocr.cli:main"
+onnxocr = "onnxocr.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["onnxocr*"]
