@@ -602,6 +602,35 @@ body {
     margin-top: var(--sp-sm);
 }
 
+/* Visualization loading indicator */
+.vis-loading {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: none;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 5;
+}
+.vis-loading.visible { display: flex; }
+
+.spinner-sm {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
 /* --- 10. Toast Notification --- */
 .toast-container {
     position: fixed;

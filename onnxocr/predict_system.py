@@ -1,6 +1,5 @@
 import os
 import cv2
-import copy
 from . import predict_det
 from . import predict_cls
 from . import predict_rec
@@ -40,7 +39,6 @@ class TextSystem(object):
         self.crop_image_res_index += bbox_num
 
     def __call__(self, img, cls=True):
-        ori_im = img.copy()
         log.debug("OCR pipeline started, image shape: {}", img.shape)
         # Text detection
         dt_boxes = self.text_detector(img)
@@ -55,11 +53,11 @@ class TextSystem(object):
 
         # Image crop
         for bno in range(len(dt_boxes)):
-            tmp_box = copy.deepcopy(dt_boxes[bno])
+            tmp_box = dt_boxes[bno]
             if self.args.det_box_type == "quad":
-                img_crop = get_rotate_crop_image(ori_im, tmp_box)
+                img_crop = get_rotate_crop_image(img, tmp_box)
             else:
-                img_crop = get_minarea_rect_crop(ori_im, tmp_box)
+                img_crop = get_minarea_rect_crop(img, tmp_box)
             img_crop_list.append(img_crop)
 
         # Orientation classification
