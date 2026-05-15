@@ -27,6 +27,11 @@ class TextRecognizer(PredictBase):
         self.rec_output_name = self.get_output_name(self.rec_onnx_session)
         log.info("Recognition model loaded: {}", args.rec_model_dir)
 
+        # Warm-up: avoid 2-10x slower first call due to lazy kernel initialization
+        imgC, imgH, imgW = self.rec_image_shape[:3]
+        dummy = np.zeros((1, imgC, imgH, imgW), dtype=np.float32)
+        self.rec_onnx_session.run(self.rec_output_name, {self.rec_input_name[0]: dummy})
+
     def resize_norm_img(self, img, max_wh_ratio):
         imgC, imgH, imgW = self.rec_image_shape
         if self.rec_algorithm == "NRTR" or self.rec_algorithm == "ViTSTR":
@@ -302,7 +307,6 @@ class TextRecognizer(PredictBase):
                 norm_img_batch.append(norm_img)
 
             norm_img_batch = np.concatenate(norm_img_batch)
-            norm_img_batch = norm_img_batch.copy()
 
             input_feed = self.get_input_feed(self.rec_input_name, norm_img_batch)
             outputs = self.rec_onnx_session.run(

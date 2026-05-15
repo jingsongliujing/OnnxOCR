@@ -53,6 +53,10 @@ class TextDetector(PredictBase):
         self.det_output_name = self.get_output_name(self.det_onnx_session)
         log.info("Detection model loaded: {}", args.det_model_dir)
 
+        # Warm-up: avoid 2-10x slower first call due to lazy kernel initialization
+        dummy = np.zeros((1, 3, args.det_limit_side_len, args.det_limit_side_len), dtype=np.float32)
+        self.det_onnx_session.run(self.det_output_name, {self.det_input_name[0]: dummy})
+
     def order_points_clockwise(self, pts):
         rect = np.zeros((4, 2), dtype="float32")
         s = pts.sum(axis=1)
@@ -98,7 +102,7 @@ class TextDetector(PredictBase):
         return dt_boxes
 
     def __call__(self, img):
-        ori_im = img.copy()
+        ori_shape = img.shape
         data = {"image": img}
 
         data = transform(data, self.preprocess_op)
@@ -107,7 +111,6 @@ class TextDetector(PredictBase):
             return None, 0
         img = np.expand_dims(img, axis=0)
         shape_list = np.expand_dims(shape_list, axis=0)
-        img = img.copy()
 
         input_feed = self.get_input_feed(self.det_input_name, img)
         t0 = time.time()
@@ -121,8 +124,8 @@ class TextDetector(PredictBase):
         dt_boxes = post_result[0]["points"]
 
         if self.args.det_box_type == "poly":
-            dt_boxes = self.filter_tag_det_res_only_clip(dt_boxes, ori_im.shape)
+            dt_boxes = self.filter_tag_det_res_only_clip(dt_boxes, ori_shape)
         else:
-            dt_boxes = self.filter_tag_det_res(dt_boxes, ori_im.shape)
+            dt_boxes = self.filter_tag_det_res(dt_boxes, ori_shape)
 
         return dt_boxes

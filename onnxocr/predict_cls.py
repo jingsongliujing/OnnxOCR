@@ -1,5 +1,4 @@
 import cv2
-import copy
 import numpy as np
 import math
 
@@ -22,6 +21,11 @@ class TextClassifier(PredictBase):
         self.cls_input_name = self.get_input_name(self.cls_onnx_session)
         self.cls_output_name = self.get_output_name(self.cls_onnx_session)
         log.info("Classification model loaded: {}", args.cls_model_dir)
+
+        # Warm-up: avoid 2-10x slower first call due to lazy kernel initialization
+        imgC, imgH, imgW = self.cls_image_shape
+        dummy = np.zeros((1, imgC, imgH, imgW), dtype=np.float32)
+        self.cls_onnx_session.run(self.cls_output_name, {self.cls_input_name[0]: dummy})
 
     def resize_norm_img(self, img):
         imgC, imgH, imgW = self.cls_image_shape
@@ -46,7 +50,7 @@ class TextClassifier(PredictBase):
         return padding_im
 
     def __call__(self, img_list):
-        img_list = copy.deepcopy(img_list)
+        img_list = list(img_list)
         img_num = len(img_list)
         # Calculate the aspect ratio of all text bars
         width_list = []
@@ -73,7 +77,6 @@ class TextClassifier(PredictBase):
                 norm_img = norm_img[np.newaxis, :]
                 norm_img_batch.append(norm_img)
             norm_img_batch = np.concatenate(norm_img_batch)
-            norm_img_batch = norm_img_batch.copy()
 
             input_feed = self.get_input_feed(self.cls_input_name, norm_img_batch)
             outputs = self.cls_onnx_session.run(

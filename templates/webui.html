@@ -103,6 +103,10 @@
                             <div class="loading-text" data-i18n="recognizing">Recognizing...</div>
                         </div>
                     </div>
+                    <div class="vis-loading" id="visLoading">
+                        <div class="spinner spinner-sm"></div>
+                        <span data-i18n="visGenerating">Generating annotated image...</span>
+                    </div>
                 </div>
             </div>
 
@@ -187,6 +191,7 @@ const I18N = {
             confidence: 'Confidence',
             noMarkdownContent: 'No markdown content',
             ocrModel: 'OCR Model',
+            visGenerating: 'Generating annotated image...',
         },
         zh: {
             tabGeneral: '通用 OCR',
@@ -225,6 +230,7 @@ const I18N = {
             confidence: '置信度',
             noMarkdownContent: '无 Markdown 内容',
             ocrModel: 'OCR 模型',
+            visGenerating: '标记后图片生成中...',
         },
     },
     init() {
@@ -348,24 +354,48 @@ class ImageCanvas {
 
     loadImage(file) {
         return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = e => {
-                const img = new Image();
-                img.onload = () => { this._setImage(img); resolve(); };
-                img.onerror = () => reject(new Error(I18N.t('failedToLoadImage')));
-                img.src = e.target.result;
+            const img = new Image();
+            img.onload = () => {
+                this._setImage(img);
+                // Pre-read base64 in background for API calls (doesn't block display)
+                this._cacheBase64(file);
+                resolve();
             };
-            reader.onerror = () => reject(new Error(I18N.t('failedToLoadImage')));
-            reader.readAsDataURL(file);
+            img.onerror = () => reject(new Error(I18N.t('failedToLoadImage')));
+            // Use blob URL for instant display (avoids slow base64 encode/decode cycle)
+            img.src = URL.createObjectURL(file);
         });
     }
 
     loadImageFromBase64(b64) {
         return new Promise((resolve, reject) => {
             const img = new Image();
-            img.onload = () => { this._setImage(img); resolve(); };
-            img.onerror = () => reject(new Error(I18N.t('failedToLoadImage')));
-            img.src = 'data:image/png;base64,' + b64;
+            img.onload = () => {
+                this.img = img;
+                this.boxes = [];
+                this.selectionRect = null;
+                this.hideVisLoading();
+                // Defer rendering to next frame so the browser has recalculated
+                // layout after removing overlays (otherwise getBoundingClientRect
+                // may return 0 and the canvas ends up 0×0).
+                requestAnimationFrame(() => {
+                    this._fitCanvas();
+                    this.render();
+                });
+                resolve();
+            };
+            img.onerror = () => { this.hideVisLoading(); reject(new Error(I18N.t('failedToLoadImage'))); };
+            // Server sends JPEG via cv2.imencode('.jpg', ...), but also handle PNG
+            const prefix = b64.startsWith('/9j/') ? 'data:image/jpeg;base64,' : 'data:image/png;base64,';
+            img.src = prefix + b64;
+        });
+    }
+
+    _cacheBase64(file) {
+        this._pendingBase64 = new Promise(resolve => {
+            const reader = new FileReader();
+            reader.onload = e => resolve(e.target.result.split(',')[1]);
+            reader.readAsDataURL(file);
         });
     }
 
@@ -522,28 +552,39 @@ class ImageCanvas {
 
     clearSelection() { this.selectionRect = null; document.getElementById('canvasSelection').style.display = 'none'; }
 
+    showVisLoading() { document.getElementById('visLoading').classList.add('visible'); }
+    hideVisLoading() { document.getElementById('visLoading').classList.remove('visible'); }
+
     clear() {
         this.img = null;
         this.boxes = [];
         this.selectionRect = null;
+        this._pendingBase64 = null;
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.canvas.style.transform = '';
     }
 
-    toBase64() {
+    async toBase64() {
         if (!this.img) return null;
-        const tmpCanvas = document.createElement('canvas');
         const sel = this.selectionRect;
         if (sel) {
+            // Selection: encode selected region as JPEG (much faster than PNG)
+            const tmpCanvas = document.createElement('canvas');
             tmpCanvas.width = sel.w;
             tmpCanvas.height = sel.h;
             tmpCanvas.getContext('2d').drawImage(this.img, sel.x, sel.y, sel.w, sel.h, 0, 0, sel.w, sel.h);
-        } else {
-            tmpCanvas.width = this.img.naturalWidth;
-            tmpCanvas.height = this.img.naturalHeight;
-            tmpCanvas.getContext('2d').drawImage(this.img, 0, 0);
+            return tmpCanvas.toDataURL('image/jpeg', 0.92).split(',')[1];
         }
-        return tmpCanvas.toDataURL('image/png').split(',')[1];
+        // No selection: use cached base64 from file read (avoids re-encoding entirely)
+        if (this._pendingBase64) {
+            return await this._pendingBase64;
+        }
+        // Fallback: encode full image as JPEG
+        const tmpCanvas = document.createElement('canvas');
+        tmpCanvas.width = this.img.naturalWidth;
+        tmpCanvas.height = this.img.naturalHeight;
+        tmpCanvas.getContext('2d').drawImage(this.img, 0, 0);
+        return tmpCanvas.toDataURL('image/jpeg', 0.92).split(',')[1];
     }
 }
 
@@ -605,7 +646,7 @@ const ResultRenderer = {
         });
         this.lastText = allText.trim();
         if (imageCanvas.img) imageCanvas.setBoxes(results.filter(r => r.bounding_box && r.bounding_box.length === 4));
-        if (data.visualization) imageCanvas.loadImageFromBase64(data.visualization);
+        if (data.visualization) { imageCanvas.showVisLoading(); imageCanvas.loadImageFromBase64(data.visualization); }
         this.body.innerHTML = '';
         this.body.appendChild(nav);
         Toast.success(I18N.t('recognized', { n: results.length }));
@@ -629,7 +670,7 @@ const ResultRenderer = {
             div.appendChild(plate);
         });
         this.lastText = allText.trim();
-        if (data.visualization) imageCanvas.loadImageFromBase64(data.visualization);
+        if (data.visualization) { imageCanvas.showVisLoading(); imageCanvas.loadImageFromBase64(data.visualization); }
         this.body.innerHTML = '';
         this.body.appendChild(div);
         Toast.success(I18N.t('detectedPlates', { n: results.length }));
@@ -651,7 +692,7 @@ const ResultRenderer = {
         } else {
             this.lastText = '';
         }
-        if (data.visualization) imageCanvas.loadImageFromBase64(data.visualization);
+        if (data.visualization) { imageCanvas.showVisLoading(); imageCanvas.loadImageFromBase64(data.visualization); }
         this.body.innerHTML = '';
         this.body.appendChild(div);
         Toast.success(I18N.t('tableRecognized'));
@@ -677,7 +718,7 @@ const ResultRenderer = {
         });
         this.lastText = allText.trim();
         div.appendChild(nav);
-        if (data.visualization) imageCanvas.loadImageFromBase64(data.visualization);
+        if (data.visualization) { imageCanvas.showVisLoading(); imageCanvas.loadImageFromBase64(data.visualization); }
         this.body.innerHTML = '';
         this.body.appendChild(div);
         Toast.success(I18N.t('detectedLayout', { n: boxes.length }));
@@ -698,7 +739,7 @@ const ResultRenderer = {
         preview.className = 'markdown-preview';
         preview.textContent = this.lastText || I18N.t('noMarkdownContent');
         div.appendChild(preview);
-        if (data.visualization) imageCanvas.loadImageFromBase64(data.visualization);
+        if (data.visualization) { imageCanvas.showVisLoading(); imageCanvas.loadImageFromBase64(data.visualization); }
         this.body.innerHTML = '';
         this.body.appendChild(div);
         Toast.success(I18N.t('markdownGenerated'));
@@ -803,7 +844,7 @@ const App = {
         const loading = document.getElementById('canvasLoading');
         loading.classList.add('visible');
         try {
-            const b64 = imageCanvas.toBase64();
+            const b64 = await imageCanvas.toBase64();
             const tab = TabManager.current;
             let data;
             switch (tab) {
@@ -814,7 +855,17 @@ const App = {
                 case 'markdown':data = await OCRClient.layoutMarkdown(b64); ResultRenderer.renderMarkdown(data); break;
             }
         } catch (err) { Toast.error(err.message); }
-        finally { loading.classList.remove('visible'); }
+        finally {
+            loading.classList.remove('visible');
+            // After removing the overlay, force a canvas re-render on next frame
+            // in case the visualization image loaded while overlay was still visible.
+            requestAnimationFrame(() => {
+                if (imageCanvas.img) {
+                    imageCanvas._fitCanvas();
+                    imageCanvas.render();
+                }
+            });
+        }
     },
     _clear() {
         imageCanvas.clear();
