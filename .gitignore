@@ -153,9 +153,7 @@ dmypy.json
 cython_debug/
 
 # OnnxOCR generated demo outputs
-result_img/
-results/
-uploads/
+output/
 
 # Optional models are hosted on ModelScope and can be restored with:
 #   python scripts/download_models.py

@@ -13,8 +13,8 @@ from onnxocr.visualization import (
 )
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-UPLOAD_ROOT = os.path.join(BASE_DIR, "uploads")
-RESULT_ROOT = os.path.join(BASE_DIR, "results")
+UPLOAD_ROOT = os.path.join(BASE_DIR, "output", "uploads")
+RESULT_ROOT = os.path.join(BASE_DIR, "output", "results")
 os.makedirs(UPLOAD_ROOT, exist_ok=True)
 os.makedirs(RESULT_ROOT, exist_ok=True)
 

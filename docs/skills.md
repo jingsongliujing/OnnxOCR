@@ -6,7 +6,7 @@ OnnxOCR 提供一层可扩展的垂直 OCR CLI。它面向固定行业模板，�
 
 本项目中文优先，英文兼容：
 
-- Skill 名称、说明、领域标签、贡献文档以中文为主。
+- CLI 场景名称、说明、领域标签、贡献文档以中文为主。
 - 字段 ID 使用英文 snake_case，便于 JSON、数据库、API 和下游系统消费。
 - 常见英文标签作为兼容别名，方便开源用户和跨境业务测试。
 
@@ -15,18 +15,18 @@ OnnxOCR 提供一层可扩展的垂直 OCR CLI。它面向固定行业模板，�
 ```text
 AGENTS.md                       # Agent 进入仓库后的操作指南
 skills/
-  README.md                     # Skill 索引
-  industry-ocr/SKILL.md         # Agent 可读的中文 Skill 说明
+  README.md                     # CLI 场景索引
+  industry-ocr/SKILL.md         # Agent 可读的中文 CLI 说明
 onnxocr/
-  skill_cli.py                  # Skill 命令行入口
-  skills/
+  cli.py                        # CLI 命令行入口
+  cli_runtime/                  # CLI 运行时
     base.py                     # 标准输入输出模型和基类
     engine.py                   # ONNXPaddleOcr 懒加载适配器
     extractors.py               # 标签和正则抽取工具
-    registry.py                 # Skill 注册中心
-    template_skill.py           # 模板型 OCR Skill
-    builtin/industry.py         # 内置垂直行业 Skill
-tests/test_skills.py            # 不依赖大模型的 Skill 单元测试
+    registry.py                 # 场景注册中心
+    template_cli.py             # 模板型 OCR CLI
+    builtin/industry.py         # 内置垂直行业 CLI 场景
+tests/test_skills.py            # 不依赖大模型的 CLI 单元测试
 ```
 
 ## 默认启用场景
@@ -83,12 +83,12 @@ onnocr run education.exam_paper onnxocr/test_images/715873facf064583b44ef2829512
 ## Python API
 
 ```python
-from onnxocr.skills import OnnxOCREngine, SkillInput, create_default_registry
+from onnxocr.cli_runtime import OnnxOCREngine, CLIInput, create_default_registry
 
 engine = OnnxOCREngine()
 registry = create_default_registry()
-skill = registry.get("transport.train_ticket", engine)
-result = skill.run(SkillInput(image_path="data/samples/scid_train_ticket.jpg"))
+cli = registry.get("finance.invoice", engine)
+result = cli.run(CLIInput(image_path="data/samples/invoice_sample.jpg"))
 print(result.to_dict())
 ```
 

@@ -65,8 +65,10 @@ def create_default_registry() -> SkillRegistry:
     registry = SkillRegistry()
     registry.update(
         [
-            ("transport.train_ticket", create_transport_train_ticket_skill),
             ("education.exam_paper", create_education_exam_paper_skill),
+            ("identity.id_card", create_identity_id_card_skill),
+            ("finance.bank_card", create_finance_bank_card_skill),
+            ("finance.invoice", create_finance_invoice_skill),
             ("vehicle.plate", create_vehicle_plate_skill),
             ("table.structure", create_table_structuring_skill),
             ("document.image_to_markdown", create_document_image_to_markdown_skill),
@@ -79,25 +81,24 @@ def create_candidate_registry() -> SkillRegistry:
     """Experimental templates that need real sample validation before default use."""
 
     registry = create_default_registry()
-    registry.update(
-        [
-            ("agriculture.quality_inspection", create_agriculture_quality_skill),
-            ("agriculture.traceability_label", create_agriculture_traceability_skill),
-            ("agriculture.plant_protection_record", create_agriculture_plant_protection_skill),
-            ("oa.reimbursement", create_oa_reimbursement_skill),
-            ("finance.invoice", create_finance_invoice_skill),
-            ("finance.bank_card", create_finance_bank_card_skill),
-            ("identity.id_card", create_identity_id_card_skill),
-            ("business.license", create_business_license_skill),
-            ("legal.contract_key_info", create_contract_key_info_skill),
-            ("government.red_head_document", create_government_red_head_skill),
-            ("logistics.inbound_order", create_logistics_inbound_skill),
-            ("logistics.express_waybill", create_logistics_express_waybill_skill),
-            ("medical.lab_report", create_medical_lab_report_skill),
-            ("transport.taxi_invoice", create_transport_taxi_invoice_skill),
-            ("vehicle.driving_license", create_vehicle_driving_license_skill),
-            ("vehicle.driver_license", create_vehicle_driver_license_skill),
-            ("document.pdf_to_markdown", create_document_pdf_to_markdown_skill),
-        ]
-    )
+    candidates = [
+        ("agriculture.quality_inspection", create_agriculture_quality_skill),
+        ("agriculture.traceability_label", create_agriculture_traceability_skill),
+        ("agriculture.plant_protection_record", create_agriculture_plant_protection_skill),
+        ("oa.reimbursement", create_oa_reimbursement_skill),
+        ("business.license", create_business_license_skill),
+        ("legal.contract_key_info", create_contract_key_info_skill),
+        ("government.red_head_document", create_government_red_head_skill),
+        ("logistics.inbound_order", create_logistics_inbound_skill),
+        ("logistics.express_waybill", create_logistics_express_waybill_skill),
+        ("medical.lab_report", create_medical_lab_report_skill),
+        ("transport.train_ticket", create_transport_train_ticket_skill),
+        ("transport.taxi_invoice", create_transport_taxi_invoice_skill),
+        ("vehicle.driving_license", create_vehicle_driving_license_skill),
+        ("vehicle.driver_license", create_vehicle_driver_license_skill),
+        ("document.pdf_to_markdown", create_document_pdf_to_markdown_skill),
+    ]
+    for skill_id, factory in candidates:
+        if skill_id not in registry.list_ids():
+            registry.register(skill_id, factory)
     return registry

@@ -2,15 +2,15 @@ from __future__ import annotations
 
 from typing import Dict
 
-from onnxocr.skills.extractors import FieldSpec
-from onnxocr.skills.template_skill import TemplateOCRSkill, TemplateSpec
+from onnxocr.cli_runtime.extractors import FieldSpec
+from onnxocr.cli_runtime.template_cli import TemplateOCREngine, TemplateSpec
 
 
-def create_agriculture_quality_skill(ocr_engine):
-    return TemplateOCRSkill(
+def create_agriculture_quality_cli(ocr_engine):
+    return TemplateOCREngine(
         ocr_engine,
         TemplateSpec(
-            skill_id="agriculture.quality_inspection",
+            cli_id="agriculture.quality_inspection",
             name="农产品质检单 OCR",
             description="面向农产品质检单、入库单和溯源标签的字段抽取模板。",
             domains=["农业", "质检", "溯源"],
@@ -25,11 +25,11 @@ def create_agriculture_quality_skill(ocr_engine):
     )
 
 
-def create_agriculture_traceability_skill(ocr_engine):
-    return TemplateOCRSkill(
+def create_agriculture_traceability_cli(ocr_engine):
+    return TemplateOCREngine(
         ocr_engine,
         TemplateSpec(
-            skill_id="agriculture.traceability_label",
+            cli_id="agriculture.traceability_label",
             name="农产品溯源标签 OCR",
             description="面向农产品包装、二维码旁标签、产地溯源标签的字段抽取模板。",
             domains=["农业", "溯源", "标签"],
@@ -44,11 +44,11 @@ def create_agriculture_traceability_skill(ocr_engine):
     )
 
 
-def create_agriculture_plant_protection_skill(ocr_engine):
-    return TemplateOCRSkill(
+def create_agriculture_plant_protection_cli(ocr_engine):
+    return TemplateOCREngine(
         ocr_engine,
         TemplateSpec(
-            skill_id="agriculture.plant_protection_record",
+            cli_id="agriculture.plant_protection_record",
             name="植保作业记录 OCR",
             description="面向植保单据、农药使用记录、田间作业记录的字段抽取模板。",
             domains=["农业", "植保", "作业记录"],
@@ -63,11 +63,11 @@ def create_agriculture_plant_protection_skill(ocr_engine):
     )
 
 
-def create_oa_reimbursement_skill(ocr_engine):
-    return TemplateOCRSkill(
+def create_oa_reimbursement_cli(ocr_engine):
+    return TemplateOCREngine(
         ocr_engine,
         TemplateSpec(
-            skill_id="oa.reimbursement",
+            cli_id="oa.reimbursement",
             name="企业报销单 OCR",
             description="面向企业 OA 报销单、发票粘贴单和行政单据的字段抽取模板。",
             domains=["企业 OA", "财务", "行政"],
@@ -82,11 +82,11 @@ def create_oa_reimbursement_skill(ocr_engine):
     )
 
 
-def create_finance_invoice_skill(ocr_engine):
-    return TemplateOCRSkill(
+def create_finance_invoice_cli(ocr_engine):
+    return TemplateOCREngine(
         ocr_engine,
         TemplateSpec(
-            skill_id="finance.invoice",
+            cli_id="finance.invoice",
             name="发票 OCR",
             description="面向增值税发票、普通发票、电子发票截图的字段抽取模板。",
             domains=["财务", "发票", "税务"],
@@ -102,11 +102,11 @@ def create_finance_invoice_skill(ocr_engine):
     )
 
 
-def create_contract_key_info_skill(ocr_engine):
-    return TemplateOCRSkill(
+def create_contract_key_info_cli(ocr_engine):
+    return TemplateOCREngine(
         ocr_engine,
         TemplateSpec(
-            skill_id="legal.contract_key_info",
+            cli_id="legal.contract_key_info",
             name="合同关键信息 OCR",
             description="面向采购合同、服务合同、租赁合同的合同编号、主体、金额和签署日期抽取模板。",
             domains=["法务", "合同", "企业管理"],
@@ -121,11 +121,11 @@ def create_contract_key_info_skill(ocr_engine):
     )
 
 
-def create_government_red_head_skill(ocr_engine):
-    return TemplateOCRSkill(
+def create_government_red_head_cli(ocr_engine):
+    return TemplateOCREngine(
         ocr_engine,
         TemplateSpec(
-            skill_id="government.red_head_document",
+            cli_id="government.red_head_document",
             name="红头文件 OCR",
             description="面向红头文件、公文通知、行政批复的文号、标题、发文机关和日期抽取模板。",
             domains=["政务", "公文", "行政"],
@@ -139,11 +139,11 @@ def create_government_red_head_skill(ocr_engine):
     )
 
 
-def create_education_exam_paper_skill(ocr_engine):
-    return TemplateOCRSkill(
+def create_education_exam_paper_cli(ocr_engine):
+    return TemplateOCREngine(
         ocr_engine,
         TemplateSpec(
-            skill_id="education.exam_paper",
+            cli_id="education.exam_paper",
             name="试卷信息 OCR",
             description="面向中小学试卷、练习卷、检测卷的标题、年级、科目、考试时间和满分抽取模板。",
             domains=["教育", "试卷", "教培"],
@@ -158,11 +158,11 @@ def create_education_exam_paper_skill(ocr_engine):
     )
 
 
-def create_logistics_inbound_skill(ocr_engine):
-    return TemplateOCRSkill(
+def create_logistics_inbound_cli(ocr_engine):
+    return TemplateOCREngine(
         ocr_engine,
         TemplateSpec(
-            skill_id="logistics.inbound_order",
+            cli_id="logistics.inbound_order",
             name="物流仓储入库单 OCR",
             description="面向快递面单、入库单、外采原果入库单据的字段抽取模板。",
             domains=["物流", "仓储", "入库"],
@@ -177,11 +177,11 @@ def create_logistics_inbound_skill(ocr_engine):
     )
 
 
-def create_transport_taxi_invoice_skill(ocr_engine):
-    return TemplateOCRSkill(
+def create_transport_taxi_invoice_cli(ocr_engine):
+    return TemplateOCREngine(
         ocr_engine,
         TemplateSpec(
-            skill_id="transport.taxi_invoice",
+            cli_id="transport.taxi_invoice",
             name="出租车票 OCR",
             description="面向出租汽车通用机打发票的发票代码、发票号码、信息码、车号、日期、上下车时间、里程和金额抽取模板。",
             domains=["交通", "出租车票", "发票"],
@@ -201,11 +201,11 @@ def create_transport_taxi_invoice_skill(ocr_engine):
     )
 
 
-def create_transport_train_ticket_skill(ocr_engine):
-    return TemplateOCRSkill(
+def create_transport_train_ticket_cli(ocr_engine):
+    return TemplateOCREngine(
         ocr_engine,
         TemplateSpec(
-            skill_id="transport.train_ticket",
+            cli_id="transport.train_ticket",
             name="火车票 OCR",
             description="面向铁路火车票、高铁票的出发站、到达站、车次、发车时间、席别、票价和票号抽取模板。",
             domains=["交通", "火车票", "高铁票"],
@@ -224,11 +224,11 @@ def create_transport_train_ticket_skill(ocr_engine):
     )
 
 
-def create_medical_lab_report_skill(ocr_engine):
-    return TemplateOCRSkill(
+def create_medical_lab_report_cli(ocr_engine):
+    return TemplateOCREngine(
         ocr_engine,
         TemplateSpec(
-            skill_id="medical.lab_report",
+            cli_id="medical.lab_report",
             name="检验报告 OCR",
             description="面向医院检验报告、体检报告、第三方检测报告的基础字段抽取模板。",
             domains=["医疗", "检验报告", "体检"],
@@ -243,11 +243,11 @@ def create_medical_lab_report_skill(ocr_engine):
     )
 
 
-def create_identity_id_card_skill(ocr_engine):
-    return TemplateOCRSkill(
+def create_identity_id_card_cli(ocr_engine):
+    return TemplateOCREngine(
         ocr_engine,
         TemplateSpec(
-            skill_id="identity.id_card",
+            cli_id="identity.id_card",
             name="中国公民身份证 OCR",
             description="面向中国居民身份证样张/脱敏图的姓名、性别、民族、出生日期、住址、身份证号抽取模板。",
             domains=["证照", "身份证", "实名认证"],
@@ -279,11 +279,11 @@ def create_identity_id_card_skill(ocr_engine):
     )
 
 
-def create_finance_bank_card_skill(ocr_engine):
-    return TemplateOCRSkill(
+def create_finance_bank_card_cli(ocr_engine):
+    return TemplateOCREngine(
         ocr_engine,
         TemplateSpec(
-            skill_id="finance.bank_card",
+            cli_id="finance.bank_card",
             name="银行卡 OCR",
             description="面向银行卡样张/脱敏图的卡号、银行名称、卡组织和有效期抽取模板。",
             domains=["金融", "银行卡", "支付"],
@@ -303,11 +303,11 @@ def create_finance_bank_card_skill(ocr_engine):
     )
 
 
-def create_business_license_skill(ocr_engine):
-    return TemplateOCRSkill(
+def create_business_license_cli(ocr_engine):
+    return TemplateOCREngine(
         ocr_engine,
         TemplateSpec(
-            skill_id="business.license",
+            cli_id="business.license",
             name="营业执照 OCR",
             description="面向营业执照样张/脱敏图的统一社会信用代码、名称、类型、法定代表人、住所、成立日期抽取模板。",
             domains=["企业", "营业执照", "工商"],
@@ -323,11 +323,11 @@ def create_business_license_skill(ocr_engine):
     )
 
 
-def create_logistics_express_waybill_skill(ocr_engine):
-    return TemplateOCRSkill(
+def create_logistics_express_waybill_cli(ocr_engine):
+    return TemplateOCREngine(
         ocr_engine,
         TemplateSpec(
-            skill_id="logistics.express_waybill",
+            cli_id="logistics.express_waybill",
             name="快递面单 OCR",
             description="面向快递面单样张/脱敏图的运单号、寄件人、收件人、地址、电话和快递公司抽取模板。",
             domains=["物流", "快递面单", "地址识别"],
@@ -344,11 +344,11 @@ def create_logistics_express_waybill_skill(ocr_engine):
     )
 
 
-def create_vehicle_driving_license_skill(ocr_engine):
-    return TemplateOCRSkill(
+def create_vehicle_driving_license_cli(ocr_engine):
+    return TemplateOCREngine(
         ocr_engine,
         TemplateSpec(
-            skill_id="vehicle.driving_license",
+            cli_id="vehicle.driving_license",
             name="行驶证 OCR",
             description="面向机动车行驶证主页字段的轻量抽取模板。",
             domains=["车辆", "证照", "行驶证"],
@@ -363,11 +363,11 @@ def create_vehicle_driving_license_skill(ocr_engine):
     )
 
 
-def create_vehicle_driver_license_skill(ocr_engine):
-    return TemplateOCRSkill(
+def create_vehicle_driver_license_cli(ocr_engine):
+    return TemplateOCREngine(
         ocr_engine,
         TemplateSpec(
-            skill_id="vehicle.driver_license",
+            cli_id="vehicle.driver_license",
             name="驾驶证 OCR",
             description="面向机动车驾驶证样张/脱敏图的姓名、证号、准驾车型、有效期限抽取模板。",
             domains=["车辆", "证照", "驾驶证"],
@@ -382,53 +382,53 @@ def create_vehicle_driver_license_skill(ocr_engine):
     )
 
 
-def create_vehicle_plate_skill(ocr_engine):
-    return _VehiclePlateSkill(ocr_engine)
+def create_vehicle_plate_cli(ocr_engine):
+    return _VehiclePlateCLI(ocr_engine)
 
 
-def create_table_structuring_skill(ocr_engine):
-    return _TableStructuringSkill(ocr_engine)
+def create_table_structuring_cli(ocr_engine):
+    return _TableStructuringCLI(ocr_engine)
 
 
-def create_document_image_to_markdown_skill(ocr_engine):
-    return _DocumentMarkdownSkill(
+def create_document_image_to_markdown_cli(ocr_engine):
+    return _DocumentMarkdownCLI(
         ocr_engine,
-        skill_id="document.image_to_markdown",
+        cli_id="document.image_to_markdown",
         name="图片转 Markdown",
         description="将论文截图、扫描图片、表格图片解析为 Markdown。",
         domains=["文档", "Markdown", "图片解析"],
     )
 
 
-def create_document_pdf_to_markdown_skill(ocr_engine):
-    return _DocumentMarkdownSkill(
+def create_document_pdf_to_markdown_cli(ocr_engine):
+    return _DocumentMarkdownCLI(
         ocr_engine,
-        skill_id="document.pdf_to_markdown",
+        cli_id="document.pdf_to_markdown",
         name="PDF 转 Markdown",
         description="将 PDF 文档解析为 Markdown。",
         domains=["文档", "PDF", "Markdown"],
     )
 
 
-class _VehiclePlateSkill(TemplateOCRSkill):
+class _VehiclePlateCLI(TemplateOCREngine):
     def __init__(self, ocr_engine):
         super().__init__(
             ocr_engine,
             TemplateSpec(
-                skill_id="vehicle.plate",
+                cli_id="vehicle.plate",
                 name="车牌识别 OCR",
                 description="面向停车场、园区门禁、物流车辆登记等场景的车牌识别入口。",
                 domains=["车辆", "车牌", "门禁"],
             ),
         )
 
-    def run(self, skill_input):
-        plates = self.ocr_engine.recognize_plate(skill_input)
+    def run(self, cli_input):
+        plates = self.ocr_engine.recognize_plate(cli_input)
         fields = {"plates": [item.get("plate") or item.get("plate_no") or item.get("text") for item in plates]}
         return self._make_output(fields, plates)
 
     def _make_output(self, fields: Dict, plates):
-        from onnxocr.skills.base import FieldResult, SkillOutput
+        from onnxocr.cli_runtime.base import FieldResult, CLIOutput
 
         field_results = [
             FieldResult(
@@ -437,9 +437,9 @@ class _VehiclePlateSkill(TemplateOCRSkill):
                 confidence=max([float(item.get("score", 0.0)) for item in plates] or [0.0]),
             )
         ]
-        return SkillOutput(
-            skill_id=self.skill_id,
-            skill_name=self.name,
+        return CLIOutput(
+            cli_id=self.cli_id,
+            cli_name=self.name,
             fields=fields,
             field_results=field_results,
             raw_text="\n".join(str(value) for value in fields["plates"] if value),
@@ -448,30 +448,30 @@ class _VehiclePlateSkill(TemplateOCRSkill):
         )
 
 
-class _TableStructuringSkill(TemplateOCRSkill):
+class _TableStructuringCLI(TemplateOCREngine):
     def __init__(self, ocr_engine):
         super().__init__(
             ocr_engine,
             TemplateSpec(
-                skill_id="table.structure",
+                cli_id="table.structure",
                 name="表格结构化 OCR",
                 description="将 Excel 截图、纸质表格或扫描件转成结构化 HTML、单元格框和逻辑行列数据。",
                 domains=["表格", "Excel", "多维表格"],
             ),
         )
 
-    def run(self, skill_input):
-        from onnxocr.skills.base import FieldResult, SkillOutput
+    def run(self, cli_input):
+        from onnxocr.cli_runtime.base import FieldResult, CLIOutput
 
-        table = self.ocr_engine.recognize_table(skill_input)
+        table = self.ocr_engine.recognize_table(cli_input)
         fields = {
             "html": table.get("html", ""),
             "cell_bboxes": table.get("cell_bboxes", []),
             "logic_points": table.get("logic_points", []),
         }
-        return SkillOutput(
-            skill_id=self.skill_id,
-            skill_name=self.name,
+        return CLIOutput(
+            cli_id=self.cli_id,
+            cli_name=self.name,
             fields=fields,
             field_results=[FieldResult(name="html", value=fields["html"], confidence=0.8 if fields["html"] else 0.0)],
             raw_text=fields["html"],
@@ -480,28 +480,28 @@ class _TableStructuringSkill(TemplateOCRSkill):
         )
 
 
-class _DocumentMarkdownSkill(TemplateOCRSkill):
-    def __init__(self, ocr_engine, skill_id: str, name: str, description: str, domains):
+class _DocumentMarkdownCLI(TemplateOCREngine):
+    def __init__(self, ocr_engine, cli_id: str, name: str, description: str, domains):
         super().__init__(
             ocr_engine,
             TemplateSpec(
-                skill_id=skill_id,
+                cli_id=cli_id,
                 name=name,
                 description=description,
                 domains=domains,
             ),
         )
 
-    def run(self, skill_input):
+    def run(self, cli_input):
         from pathlib import Path
 
         from onnxocr.layout_markdown import LayoutMarkdownConverter
-        from onnxocr.skills.base import FieldResult, SkillOutput
+        from onnxocr.cli_runtime.base import FieldResult, CLIOutput
 
-        if not skill_input.image_path:
-            raise ValueError("Document Markdown skill requires image_path.")
-        source_path = Path(skill_input.image_path)
-        output_dir = Path(skill_input.options.get("output_dir", "output"))
+        if not cli_input.image_path:
+            raise ValueError("Document Markdown CLI requires image_path.")
+        source_path = Path(cli_input.image_path)
+        output_dir = Path(cli_input.options.get("output_dir", "output"))
         output_md_path = output_dir / f"{source_path.stem}.md"
         converter = LayoutMarkdownConverter(
             layout_model_type="pp_doclayoutv2",
@@ -514,9 +514,9 @@ class _DocumentMarkdownSkill(TemplateOCRSkill):
             "assets_dir": result["assets_dir"],
             "markdown_preview": result["markdown"][:500],
         }
-        return SkillOutput(
-            skill_id=self.skill_id,
-            skill_name=self.name,
+        return CLIOutput(
+            cli_id=self.cli_id,
+            cli_name=self.name,
             fields=fields,
             field_results=[
                 FieldResult(

@@ -51,8 +51,8 @@ Agent 应优先使用命令行入口：
 ```bash
 onnocr list
 onnocr list --candidates
-onnocr schema transport.train_ticket
-onnocr run transport.train_ticket data/samples/scid_train_ticket.jpg --pretty
+onnocr schema finance.invoice
+onnocr run finance.invoice data/samples/synthetic_invoice.png --pretty
 ```
 
 仓库内置真实中文图片烟测：
@@ -64,12 +64,12 @@ onnocr run education.exam_paper onnxocr/test_images/715873facf064583b44ef2829512
 Python 调用：
 
 ```python
-from onnxocr.skills import OnnxOCREngine, SkillInput, create_default_registry
+from onnxocr.cli_runtime import OnnxOCREngine, CLIInput, create_default_registry
 
 engine = OnnxOCREngine()
 registry = create_default_registry()
-skill = registry.get("transport.train_ticket", engine)
-result = skill.run(SkillInput(image_path="data/samples/scid_train_ticket.jpg"))
+cli = registry.get("finance.invoice", engine)
+result = cli.run(CLIInput(image_path="data/samples/invoice_sample.jpg"))
 print(result.to_dict())
 ```
 
@@ -79,8 +79,10 @@ print(result.to_dict())
 
 | Skill ID | 中文场景 | 已验证样例 |
 | --- | --- | --- |
-| `transport.train_ticket` | 火车票 OCR | SCID 火车票样例 |
 | `education.exam_paper` | 试卷信息 OCR | 仓库内置中文试卷图片 |
+| `identity.id_card` | 中国公民身份证 OCR | 合成脱敏样例 |
+| `finance.bank_card` | 银行卡 OCR | 合成脱敏样例 |
+| `finance.invoice` | 发票 OCR | 合成脱敏样例 |
 | `vehicle.plate` | 车牌识别 OCR | 仓库内置车牌测试图 |
 | `table.structure` | 表格结构化 OCR | 仓库内置表格测试图 |
 | `document.image_to_markdown` | 图片转 Markdown | 仓库内置版面分析图片 |
