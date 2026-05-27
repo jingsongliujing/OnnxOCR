@@ -1,4 +1,5 @@
 import os
+import secrets
 import time
 import zipfile
 from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for
@@ -25,6 +26,20 @@ app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024  # 200MB
 
 ocr_logic = OCRLogic(lambda msg: print(msg))
 models = ModelRegistry(use_gpu=False)
+
+
+def create_result_id():
+    return secrets.token_urlsafe(16)
+
+
+def is_valid_result_id(result_id):
+    allowed_chars = all(char.isalnum() or char in "-_" for char in result_id)
+    return allowed_chars and len(result_id) >= 22
+
+
+def result_file_path(result_id, prefix):
+    filename = f"{prefix}_{result_id}.zip"
+    return os.path.join(RESULT_ROOT, result_id, filename)
 
 
 def save_upload_file(file, session_dir):
@@ -69,8 +84,8 @@ def ocr_files():
         ocr_logic.set_model(model_name)
     except Exception as e:
         return jsonify({"success": False, "msg": f"模型切换失败: {e}"}), 500
-    timestamp = time.strftime("%Y%m%d_%H%M%S")
-    session_dir = os.path.join(RESULT_ROOT, timestamp)
+    result_id = create_result_id()
+    session_dir = os.path.join(RESULT_ROOT, result_id)
     os.makedirs(session_dir, exist_ok=True)
     file_paths = []
     for file in files:
@@ -94,22 +109,23 @@ def ocr_files():
                 with open(os.path.join(out_dir, fname), "r", encoding="utf-8") as f:
                     content = f.read()
                 results.append({"filename": fname, "content": content})
-    zip_path = os.path.join(session_dir, f"ocr_txt_{timestamp}.zip")
+    zip_path = result_file_path(result_id, "ocr_txt")
     with zipfile.ZipFile(zip_path, "w") as zipf:
         for txt_file in txt_files:
             zipf.write(txt_file, os.path.basename(txt_file))
     return jsonify({
         "success": True,
         "results": results,
-        "zip_url": f"/download/{timestamp}"
+        "zip_url": f"/download/{result_id}"
     })
 
-@app.route("/download/<timestamp>")
-def download_zip(timestamp):
-    session_dir = os.path.join(RESULT_ROOT, timestamp)
-    zip_path = os.path.join(session_dir, f"ocr_txt_{timestamp}.zip")
+@app.route("/download/<result_id>")
+def download_zip(result_id):
+    if not is_valid_result_id(result_id):
+        return jsonify({"success": False, "msg": "文件不存在"}), 404
+    zip_path = result_file_path(result_id, "ocr_txt")
     if os.path.exists(zip_path):
-        return send_file(zip_path, as_attachment=True, download_name=f"ocr_txt_{timestamp}.zip")
+        return send_file(zip_path, as_attachment=True, download_name=os.path.basename(zip_path))
     return jsonify({"success": False, "msg": "文件不存在"}), 404
 
 @app.route("/ocr_api", methods=["POST"])
@@ -207,8 +223,8 @@ def layout_markdown_api():
         model_type = data.get("model_type", "pp_layout_cdla")
         conf_thresh = float(data.get("conf_thresh", 0.5))
         iou_thresh = float(data.get("iou_thresh", 0.5))
-        timestamp = time.strftime("%Y%m%d_%H%M%S")
-        session_dir = os.path.join(RESULT_ROOT, timestamp)
+        result_id = create_result_id()
+        session_dir = os.path.join(RESULT_ROOT, result_id)
         os.makedirs(session_dir, exist_ok=True)
         filename = secure_filename(data.get("filename", "layout_markdown.md")) or "layout_markdown.md"
         if not filename.lower().endswith(".md"):
@@ -242,8 +258,8 @@ def layout_markdown_file():
         model_type = request.form.get("model_type", "pp_doclayoutv2")
         conf_thresh = float(request.form.get("conf_thresh", 0.4))
         iou_thresh = float(request.form.get("iou_thresh", 0.5))
-        timestamp = time.strftime("%Y%m%d_%H%M%S")
-        session_dir = os.path.join(RESULT_ROOT, timestamp)
+        result_id = create_result_id()
+        session_dir = os.path.join(RESULT_ROOT, result_id)
         os.makedirs(session_dir, exist_ok=True)
         converter = models.get_layout_markdown_converter(model_type, conf_thresh, iou_thresh)
 
@@ -265,7 +281,7 @@ def layout_markdown_file():
                 }
             )
 
-        zip_path = os.path.join(session_dir, f"layout_markdown_{timestamp}.zip")
+        zip_path = result_file_path(result_id, "layout_markdown")
         with zipfile.ZipFile(zip_path, "w") as zipf:
             for md_path in md_files:
                 zipf.write(md_path, os.path.basename(md_path))
@@ -283,17 +299,18 @@ def layout_markdown_file():
         {
             "success": True,
             "results": results,
-            "zip_url": f"/download_layout_markdown/{timestamp}",
+            "zip_url": f"/download_layout_markdown/{result_id}",
         }
     )
 
 
-@app.route("/download_layout_markdown/<timestamp>")
-def download_layout_markdown_zip(timestamp):
-    session_dir = os.path.join(RESULT_ROOT, timestamp)
-    zip_path = os.path.join(session_dir, f"layout_markdown_{timestamp}.zip")
+@app.route("/download_layout_markdown/<result_id>")
+def download_layout_markdown_zip(result_id):
+    if not is_valid_result_id(result_id):
+        return jsonify({"success": False, "msg": "文件不存在"}), 404
+    zip_path = result_file_path(result_id, "layout_markdown")
     if os.path.exists(zip_path):
-        return send_file(zip_path, as_attachment=True, download_name=f"layout_markdown_{timestamp}.zip")
+        return send_file(zip_path, as_attachment=True, download_name=os.path.basename(zip_path))
     return jsonify({"success": False, "msg": "文件不存在"}), 404
 
 if __name__ == "__main__":
