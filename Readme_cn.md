@@ -182,7 +182,7 @@ python tests/test_layout_markdown.py
 
 ## PP-OCRv5 / PP-OCRv6 速度对比
 
-本仓库提供本地基准脚本，用于对比 PP-OCRv5 与默认 PP-OCRv6 medium 在同一批图片上的端到端 OCR 速度。脚本会对每张图片先预热 1 次，再计时多次取平均。
+本仓库提供本地基准脚本，用于对比 PP-OCRv5 与 PP-OCRv6 tiny/small/medium 在同一批图片上的端到端 OCR 速度。脚本会对每张图片先预热 1 次，再计时多次取平均。
 
 ```bash
 python scripts/benchmark_ppocr_versions.py --repeats 2
@@ -192,21 +192,23 @@ python scripts/benchmark_ppocr_versions.py --repeats 2
 
 | 模型 | 总平均耗时(s) | 单图平均耗时(s) | 识别行数 |
 | --- | ---: | ---: | ---: |
-| PP-OCRv5 | 7.087 | 0.886 | 250 |
-| PP-OCRv6 medium | 27.138 | 3.392 | 242 |
+| PP-OCRv5 | 7.292 | 0.911 | 250 |
+| PP-OCRv6 tiny | 4.231 | 0.529 | 249 |
+| PP-OCRv6 small | 7.506 | 0.938 | 249 |
+| PP-OCRv6 medium | 26.124 | 3.266 | 242 |
 
-| 图片 | 尺寸 | PP-OCRv5 平均(s) | PP-OCRv6 medium 平均(s) | v6/v5 | v5 行数 | v6 行数 |
-| --- | --- | ---: | ---: | ---: | ---: | ---: |
-| 715873facf064583b44ef28295126fa7.jpg | 1920x2560 | 2.251 | 8.725 | 3.88x | 72 | 64 |
-| 12.jpg | 720x1150 | 0.370 | 1.341 | 3.63x | 4 | 4 |
-| 1.jpg | 720x1150 | 0.317 | 1.134 | 3.58x | 2 | 2 |
-| french_0.jpg | 692x1024 | 0.474 | 1.396 | 2.94x | 6 | 6 |
-| japan_2.jpg | 1536x839 | 1.138 | 5.096 | 4.48x | 50 | 54 |
-| weixin_pay.jpg | 1263x1719 | 0.372 | 2.359 | 6.35x | 3 | 3 |
-| table.jpg | 371x293 | 1.151 | 4.125 | 3.58x | 81 | 75 |
-| 00006737.jpg | 896x528 | 1.015 | 2.963 | 2.92x | 32 | 34 |
+| 图片 | 尺寸 | PP-OCRv5(s) | v6 tiny(s) | v6 small(s) | v6 medium(s) | tiny/v5 | small/v5 | medium/v5 | v5 行数 | tiny 行数 | small 行数 | medium 行数 |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 715873facf064583b44ef28295126fa7.jpg | 1920x2560 | 2.471 | 1.453 | 2.673 | 8.789 | 0.59x | 1.08x | 3.56x | 72 | 72 | 71 | 64 |
+| 12.jpg | 720x1150 | 0.473 | 0.228 | 0.338 | 1.559 | 0.48x | 0.71x | 3.30x | 4 | 5 | 4 | 4 |
+| 1.jpg | 720x1150 | 0.351 | 0.173 | 0.313 | 1.131 | 0.49x | 0.89x | 3.22x | 2 | 2 | 2 | 2 |
+| french_0.jpg | 692x1024 | 0.403 | 0.214 | 0.437 | 1.221 | 0.53x | 1.08x | 3.03x | 6 | 9 | 8 | 6 |
+| japan_2.jpg | 1536x839 | 1.203 | 0.687 | 1.041 | 3.907 | 0.57x | 0.87x | 3.25x | 50 | 49 | 55 | 54 |
+| weixin_pay.jpg | 1263x1719 | 0.333 | 0.462 | 0.676 | 2.270 | 1.38x | 2.03x | 6.81x | 3 | 3 | 3 | 3 |
+| table.jpg | 371x293 | 1.123 | 0.534 | 1.133 | 4.138 | 0.48x | 1.01x | 3.68x | 81 | 74 | 73 | 75 |
+| 00006737.jpg | 896x528 | 0.936 | 0.480 | 0.896 | 3.109 | 0.51x | 0.96x | 3.32x | 32 | 35 | 33 | 34 |
 
-说明：PP-OCRv6 medium 模型更大，当前 CPU ONNXRuntime 下速度慢于 PP-OCRv5；它的优势主要在官方评测中的多语种覆盖和综合精度。对速度敏感时可尝试 `ONNXPaddleOcr(ocr_model_size="small")` 或 `ocr_model_size="tiny"`。
+说明：当前 CPU ONNXRuntime 下，PP-OCRv6 tiny 平均快于 PP-OCRv5，PP-OCRv6 small 与 PP-OCRv5 接近，PP-OCRv6 medium 因模型更大明显更慢。PP-OCRv6 medium/small 的优势主要在官方评测中的多语种覆盖和综合精度；对速度敏感时可优先使用 `ONNXPaddleOcr(ocr_model_size="tiny")` 或 `ocr_model_size="small"`。
 
 ## 通用 OCR
 

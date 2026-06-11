@@ -174,7 +174,7 @@ Generated files are written to `result_img/`, which is ignored by git.
 
 ## PP-OCRv5 / PP-OCRv6 Speed Benchmark
 
-Use the local benchmark script to compare PP-OCRv5 and the default PP-OCRv6 medium model on the same image set. Each image is warmed up once, then timed for the configured number of repeats.
+Use the local benchmark script to compare PP-OCRv5 and PP-OCRv6 tiny/small/medium on the same image set. Each image is warmed up once, then timed for the configured number of repeats.
 
 ```bash
 python scripts/benchmark_ppocr_versions.py --repeats 2
@@ -184,21 +184,23 @@ Local CPUExecutionProvider results are shown below. Full outputs are written to 
 
 | Model | Total avg (s) | Per image avg (s) | Text lines |
 | --- | ---: | ---: | ---: |
-| PP-OCRv5 | 7.087 | 0.886 | 250 |
-| PP-OCRv6 medium | 27.138 | 3.392 | 242 |
+| PP-OCRv5 | 7.292 | 0.911 | 250 |
+| PP-OCRv6 tiny | 4.231 | 0.529 | 249 |
+| PP-OCRv6 small | 7.506 | 0.938 | 249 |
+| PP-OCRv6 medium | 26.124 | 3.266 | 242 |
 
-| Image | Size | PP-OCRv5 avg (s) | PP-OCRv6 medium avg (s) | v6/v5 | v5 lines | v6 lines |
-| --- | --- | ---: | ---: | ---: | ---: | ---: |
-| 715873facf064583b44ef28295126fa7.jpg | 1920x2560 | 2.251 | 8.725 | 3.88x | 72 | 64 |
-| 12.jpg | 720x1150 | 0.370 | 1.341 | 3.63x | 4 | 4 |
-| 1.jpg | 720x1150 | 0.317 | 1.134 | 3.58x | 2 | 2 |
-| french_0.jpg | 692x1024 | 0.474 | 1.396 | 2.94x | 6 | 6 |
-| japan_2.jpg | 1536x839 | 1.138 | 5.096 | 4.48x | 50 | 54 |
-| weixin_pay.jpg | 1263x1719 | 0.372 | 2.359 | 6.35x | 3 | 3 |
-| table.jpg | 371x293 | 1.151 | 4.125 | 3.58x | 81 | 75 |
-| 00006737.jpg | 896x528 | 1.015 | 2.963 | 2.92x | 32 | 34 |
+| Image | Size | PP-OCRv5 (s) | v6 tiny (s) | v6 small (s) | v6 medium (s) | tiny/v5 | small/v5 | medium/v5 | v5 lines | tiny lines | small lines | medium lines |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 715873facf064583b44ef28295126fa7.jpg | 1920x2560 | 2.471 | 1.453 | 2.673 | 8.789 | 0.59x | 1.08x | 3.56x | 72 | 72 | 71 | 64 |
+| 12.jpg | 720x1150 | 0.473 | 0.228 | 0.338 | 1.559 | 0.48x | 0.71x | 3.30x | 4 | 5 | 4 | 4 |
+| 1.jpg | 720x1150 | 0.351 | 0.173 | 0.313 | 1.131 | 0.49x | 0.89x | 3.22x | 2 | 2 | 2 | 2 |
+| french_0.jpg | 692x1024 | 0.403 | 0.214 | 0.437 | 1.221 | 0.53x | 1.08x | 3.03x | 6 | 9 | 8 | 6 |
+| japan_2.jpg | 1536x839 | 1.203 | 0.687 | 1.041 | 3.907 | 0.57x | 0.87x | 3.25x | 50 | 49 | 55 | 54 |
+| weixin_pay.jpg | 1263x1719 | 0.333 | 0.462 | 0.676 | 2.270 | 1.38x | 2.03x | 6.81x | 3 | 3 | 3 | 3 |
+| table.jpg | 371x293 | 1.123 | 0.534 | 1.133 | 4.138 | 0.48x | 1.01x | 3.68x | 81 | 74 | 73 | 75 |
+| 00006737.jpg | 896x528 | 0.936 | 0.480 | 0.896 | 3.109 | 0.51x | 0.96x | 3.32x | 32 | 35 | 33 | 34 |
 
-Note: PP-OCRv6 medium is larger and is slower than PP-OCRv5 under CPU ONNXRuntime in this local test. Its benefit is broader language coverage and stronger overall accuracy in official benchmarks. For latency-sensitive CPU scenarios, try `ONNXPaddleOcr(ocr_model_size="small")` or `ocr_model_size="tiny"`.
+Note: under CPU ONNXRuntime in this local test, PP-OCRv6 tiny is faster than PP-OCRv5 on average, PP-OCRv6 small is close to PP-OCRv5, and PP-OCRv6 medium is slower because it is much larger. The benefit of PP-OCRv6 medium/small is broader language coverage and stronger overall accuracy in official benchmarks. For latency-sensitive CPU scenarios, try `ONNXPaddleOcr(ocr_model_size="tiny")` or `ocr_model_size="small"`.
 
 ## General OCR
 

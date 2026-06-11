@@ -51,8 +51,12 @@ def build_model(version: str):
             det_db_unclip_ratio=1.5,
             det_db_max_candidates=1000,
         )
-    if version == "ppocrv6":
-        return ONNXPaddleOcr(use_angle_cls=False, use_gpu=False, ocr_model_size="medium")
+    if version in {"ppocrv6_tiny", "ppocrv6_small", "ppocrv6_medium"}:
+        return ONNXPaddleOcr(
+            use_angle_cls=False,
+            use_gpu=False,
+            ocr_model_size=version.removeprefix("ppocrv6_"),
+        )
     raise ValueError(f"Unsupported version: {version}")
 
 
@@ -105,8 +109,8 @@ def write_markdown(output_path: Path, summary, results):
     lines.extend(
         [
             "",
-            "| Image | Size | PP-OCRv5 avg (s) | PP-OCRv6 medium avg (s) | Speed ratio v6/v5 | v5 lines | v6 lines |",
-            "| --- | --- | ---: | ---: | ---: | ---: | ---: |",
+            "| Image | Size | PP-OCRv5 avg (s) | PP-OCRv6 tiny avg (s) | PP-OCRv6 small avg (s) | PP-OCRv6 medium avg (s) | tiny/v5 | small/v5 | medium/v5 | v5 lines | tiny lines | small lines | medium lines |",
+            "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
         ]
     )
     by_image = {}
@@ -115,11 +119,15 @@ def write_markdown(output_path: Path, summary, results):
             by_image.setdefault(row["image"], {})[model_name] = row
     for image_name in summary["images"]:
         v5 = by_image[image_name]["ppocrv5"]
-        v6 = by_image[image_name]["ppocrv6"]
-        h, w = v6["shape"][:2]
-        ratio = v6["avg_s"] / v5["avg_s"] if v5["avg_s"] else 0
+        tiny = by_image[image_name]["ppocrv6_tiny"]
+        small = by_image[image_name]["ppocrv6_small"]
+        medium = by_image[image_name]["ppocrv6_medium"]
+        h, w = medium["shape"][:2]
+        tiny_ratio = tiny["avg_s"] / v5["avg_s"] if v5["avg_s"] else 0
+        small_ratio = small["avg_s"] / v5["avg_s"] if v5["avg_s"] else 0
+        medium_ratio = medium["avg_s"] / v5["avg_s"] if v5["avg_s"] else 0
         lines.append(
-            f"| {image_name} | {w}x{h} | {v5['avg_s']:.3f} | {v6['avg_s']:.3f} | {ratio:.2f}x | {v5['text_lines']} | {v6['text_lines']} |"
+            f"| {image_name} | {w}x{h} | {v5['avg_s']:.3f} | {tiny['avg_s']:.3f} | {small['avg_s']:.3f} | {medium['avg_s']:.3f} | {tiny_ratio:.2f}x | {small_ratio:.2f}x | {medium_ratio:.2f}x | {v5['text_lines']} | {tiny['text_lines']} | {small['text_lines']} | {medium['text_lines']} |"
         )
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -141,7 +149,7 @@ def main():
         "models": {},
     }
 
-    for version in ("ppocrv5", "ppocrv6"):
+    for version in ("ppocrv5", "ppocrv6_tiny", "ppocrv6_small", "ppocrv6_medium"):
         model = build_model(version)
         rows = benchmark_model(model, images, repeats=args.repeats)
         results[version] = rows
