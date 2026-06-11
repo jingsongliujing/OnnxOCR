@@ -18,7 +18,14 @@ RESULT_ROOT = os.path.join(BASE_DIR, "results")
 os.makedirs(UPLOAD_ROOT, exist_ok=True)
 os.makedirs(RESULT_ROOT, exist_ok=True)
 
-MODEL_OPTIONS = ["PP-OCRv5", "PP-OCRv4", "ch_ppocr_server_v2.0"]
+MODEL_OPTIONS = [
+    "PP-OCRv6",
+    "PP-OCRv6 small",
+    "PP-OCRv6 tiny",
+    "PP-OCRv5",
+    "PP-OCRv4",
+    "ch_ppocr_server_v2.0",
+]
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
 app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024  # 200MB

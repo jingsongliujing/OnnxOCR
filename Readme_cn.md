@@ -16,6 +16,12 @@
 
 ## 版本更新
 
+- **2026.06.11**
+  1. 默认通用 OCR 升级为官方 PP-OCRv6 Medium ONNX 模型。
+  2. 集成官方 PP-OCRv6 tiny/small/medium 检测与识别 ONNX 模型，以及 `ppocrv6_dict.txt`、`ppocrv6_tiny_dict.txt` 字典。
+  3. PP-OCRv6 检测后处理参数对齐官方 `inference.yml`。
+  4. 新增 `scripts/benchmark_ppocr_versions.py`，用于多图对比 PP-OCRv5 与 PP-OCRv6 速度。
+
 - **2026.05.27**
   1. 新增 OCR + Qwen3.5-2B ONNX 信息抽取使用方法。
   2. 新增 `onnxocr.qwen35_2b` 包内模块，用于 Qwen3.5-2B ONNX 模型下载、校验和纯 Python 推理。
@@ -40,7 +46,7 @@
 1. **脱离深度学习训练框架**：可直接用于部署的通用 OCR 工程。
 2. **跨架构支持**：基于 PaddleOCR 转换的 ONNX 模型，可部署在 ARM 和 x86 架构设备上。
 3. **统一推理引擎**：项目内 ONNX 模型统一通过 `onnxocr/inference_engine.py` 创建 ONNXRuntime Session。
-4. **多语种支持**：单模型支持 5 种文字类型。
+4. **多语种支持**：默认 PP-OCRv6 medium/small 单模型支持 50 种语言，tiny 支持 49 种语言。
 5. **国产化适配友好**：下游厂商适配 GPU/NPU 时，优先修改统一推理引擎即可。
 
 ## 环境安装
@@ -52,25 +58,19 @@ pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
 
 说明：
 
-- 仓库默认只包含 `tests/test_general_ocr.py` 所需的 PP-OCRv5 通用 OCR 模型。
+- 仓库默认使用官方 PP-OCRv6 medium ONNX 通用 OCR 模型。
 - 车牌识别、表格识别、版面分析、方向分类、RapidDoc Markdown 导出等扩展模型较大，国内优先从 [ModelScope](https://www.modelscope.cn/models/supersong/onnxocr_model/tree/master/models) 下载，也可以使用 [HuggingFace](https://huggingface.co/jingsongliu/onnxocr_model/tree/main) 或国内镜像站 `https://hf-mirror.com`。
-- PP-OCRv5 Server ONNX 模型也可下载后替换 `onnxocr/models/ppocrv5/` 下的 det/rec 模型。
+- PP-OCRv6 tiny/small/medium ONNX 模型位于 `onnxocr/models/ppocrv6/`，可通过 `ONNXPaddleOcr(ocr_model_size="small")` 或 `ocr_model_size="tiny"` 切换。
 
 ## 模型下载
 
-扩展模型统一托管在 ModelScope 和 HuggingFace。国内网络建议优先使用 [ModelScope models 目录](https://www.modelscope.cn/models/supersong/onnxocr_model/tree/master/models)：
+默认下载源为 PaddleX 官方 BOS，包含 PP-OCRv6 tiny/small/medium 检测与识别 ONNX 模型：
 
 ```bash
 python scripts/download_models.py
 ```
 
-等价的 ModelScope 核心代码如下：
-
-```python
-from modelscope import snapshot_download
-
-model_dir = snapshot_download("supersong/onnxocr_model")
-```
+如需继续从 ModelScope 下载历史扩展模型，可使用 `--source modelscope`。
 
 如果希望从 HuggingFace 下载，可使用：
 
@@ -86,7 +86,7 @@ HuggingFace 模型地址：[jingsongliu/onnxocr_model](https://huggingface.co/ji
 python scripts/download_models.py --source huggingface --hf-endpoint https://hf-mirror.com
 ```
 
-脚本会把模型仓库中的 `models/` 目录同步到本地 `onnxocr/models/`，并检查 RapidDoc 所需的 `onnxocr/models/rapid_doc/layout/pp_doclayoutv2.onnx` 等关键文件是否存在。
+脚本会把模型同步到本地 `onnxocr/models/`，并检查 PP-OCRv6 与 RapidDoc 所需的关键文件是否存在。
 
 只检查本地模型是否齐全：
 
@@ -179,6 +179,34 @@ python tests/test_layout_markdown.py
 ```
 
 测试输出默认写入 `result_img/`，该目录已加入 `.gitignore`。
+
+## PP-OCRv5 / PP-OCRv6 速度对比
+
+本仓库提供本地基准脚本，用于对比 PP-OCRv5 与默认 PP-OCRv6 medium 在同一批图片上的端到端 OCR 速度。脚本会对每张图片先预热 1 次，再计时多次取平均。
+
+```bash
+python scripts/benchmark_ppocr_versions.py --repeats 2
+```
+
+本机 CPUExecutionProvider 实测结果如下，完整输出见 `output/benchmarks/ppocr_versions_benchmark.md` 与 `output/benchmarks/ppocr_versions_benchmark.json`。不同 CPU、ONNXRuntime 版本、线程数和图片尺寸会影响绝对耗时。
+
+| 模型 | 总平均耗时(s) | 单图平均耗时(s) | 识别行数 |
+| --- | ---: | ---: | ---: |
+| PP-OCRv5 | 7.087 | 0.886 | 250 |
+| PP-OCRv6 medium | 27.138 | 3.392 | 242 |
+
+| 图片 | 尺寸 | PP-OCRv5 平均(s) | PP-OCRv6 medium 平均(s) | v6/v5 | v5 行数 | v6 行数 |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| 715873facf064583b44ef28295126fa7.jpg | 1920x2560 | 2.251 | 8.725 | 3.88x | 72 | 64 |
+| 12.jpg | 720x1150 | 0.370 | 1.341 | 3.63x | 4 | 4 |
+| 1.jpg | 720x1150 | 0.317 | 1.134 | 3.58x | 2 | 2 |
+| french_0.jpg | 692x1024 | 0.474 | 1.396 | 2.94x | 6 | 6 |
+| japan_2.jpg | 1536x839 | 1.138 | 5.096 | 4.48x | 50 | 54 |
+| weixin_pay.jpg | 1263x1719 | 0.372 | 2.359 | 6.35x | 3 | 3 |
+| table.jpg | 371x293 | 1.151 | 4.125 | 3.58x | 81 | 75 |
+| 00006737.jpg | 896x528 | 1.015 | 2.963 | 2.92x | 32 | 34 |
+
+说明：PP-OCRv6 medium 模型更大，当前 CPU ONNXRuntime 下速度慢于 PP-OCRv5；它的优势主要在官方评测中的多语种覆盖和综合精度。对速度敏感时可尝试 `ONNXPaddleOcr(ocr_model_size="small")` 或 `ocr_model_size="tiny"`。
 
 ## 通用 OCR
 

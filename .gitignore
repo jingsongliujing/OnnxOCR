@@ -162,6 +162,8 @@ pytest-cache-files-*/
 # Optional models are hosted on ModelScope and can be restored with:
 #   python scripts/download_models.py
 onnxocr/models/*
+!onnxocr/models/ppocrv6/
+!onnxocr/models/ppocrv6/**
 !onnxocr/models/ppocrv5/
 !onnxocr/models/ppocrv5/**
 !onnxocr/models/orientation/

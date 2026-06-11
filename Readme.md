@@ -16,6 +16,12 @@ English | [简体中文](./Readme_cn.md) | [日本語](./Readme_ja.md)
 
 ## Version Updates
 
+- **2026.06.11**
+  1. Upgraded the default general OCR pipeline to the official PP-OCRv6 Medium ONNX models.
+  2. Added official PP-OCRv6 tiny/small/medium detection and recognition ONNX models, plus `ppocrv6_dict.txt` and `ppocrv6_tiny_dict.txt`.
+  3. Aligned PP-OCRv6 detection post-processing parameters with the official `inference.yml`.
+  4. Added `scripts/benchmark_ppocr_versions.py` for multi-image PP-OCRv5 vs PP-OCRv6 speed comparison.
+
 - **2026.05.27**
   1. Added a new OCR + Qwen3.5-2B ONNX information-extraction workflow.
   2. Added `onnxocr.qwen35_2b` as the package-level Qwen3.5-2B ONNX download, verification, and pure Python inference module.
@@ -39,7 +45,7 @@ English | [简体中文](./Readme_cn.md) | [日本語](./Readme_ja.md)
 1. **Deep learning framework free**: a general OCR project ready for deployment.
 2. **Cross-architecture support**: PaddleOCR-converted ONNX models can run on ARM and x86 devices.
 3. **Unified inference engine**: all ONNX models create ONNXRuntime sessions through `onnxocr/inference_engine.py`.
-4. **Multilingual support**: one model supports 5 text types.
+4. **Multilingual support**: PP-OCRv6 medium/small support 50 languages in one model, while tiny supports 49 languages.
 5. **Source-level integration**: `rapid_layout`, `rapid_table`, and `rapid_doc` live under the `onnxocr/` package, with no dependency on `rapidocr==3.4.3` or `rapid-orientation`.
 6. **Hardware adaptation friendly**: downstream vendors can adapt GPU/NPU providers by modifying the unified inference engine.
 
@@ -52,35 +58,27 @@ pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
 
 Notes:
 
-- By default, the repository only includes the PP-OCRv5 general OCR model files required by `tests/test_general_ocr.py`.
+- The default general OCR model is the official PP-OCRv6 medium ONNX model.
 - Extra models for license plate recognition, table recognition, layout analysis, orientation classification, and RapidDoc Markdown export are large and should be downloaded on demand. For international users, [HuggingFace](https://huggingface.co/jingsongliu/onnxocr_model/tree/main) is recommended.
-- Larger PP-OCRv5 Server ONNX models can also be downloaded separately and used to replace det/rec models under `onnxocr/models/ppocrv5/`.
+- PP-OCRv6 tiny/small/medium ONNX models live under `onnxocr/models/ppocrv6/`. Use `ONNXPaddleOcr(ocr_model_size="small")` or `ocr_model_size="tiny"` to switch.
 
 ## Model Download
 
-Extra models are hosted on [HuggingFace: jingsongliu/onnxocr_model](https://huggingface.co/jingsongliu/onnxocr_model/tree/main). International users are recommended to download from HuggingFace:
-
-```bash
-python scripts/download_models.py --source huggingface
-```
-
-The core HuggingFace API is:
-
-```python
-from huggingface_hub import snapshot_download
-
-model_dir = snapshot_download("jingsongliu/onnxocr_model")
-```
-
-For users in mainland China, ModelScope remains the default and recommended source:
+The default download source is the official PaddleX BOS model host and includes PP-OCRv6 tiny/small/medium detection and recognition ONNX models:
 
 ```bash
 python scripts/download_models.py
 ```
 
+To download historical extension models from ModelScope:
+
+```bash
+python scripts/download_models.py --source modelscope
+```
+
 ModelScope repository: [supersong/onnxocr_model](https://www.modelscope.cn/models/supersong/onnxocr_model/tree/master/models).
 
-The script copies the repository `models/` directory into local `onnxocr/models/` and checks required optional files such as `onnxocr/models/rapid_doc/layout/pp_doclayoutv2.onnx`.
+The script syncs models into local `onnxocr/models/` and checks required PP-OCRv6 and RapidDoc files.
 
 To check local models only:
 
@@ -173,6 +171,34 @@ python tests/test_layout_markdown.py
 ```
 
 Generated files are written to `result_img/`, which is ignored by git.
+
+## PP-OCRv5 / PP-OCRv6 Speed Benchmark
+
+Use the local benchmark script to compare PP-OCRv5 and the default PP-OCRv6 medium model on the same image set. Each image is warmed up once, then timed for the configured number of repeats.
+
+```bash
+python scripts/benchmark_ppocr_versions.py --repeats 2
+```
+
+Local CPUExecutionProvider results are shown below. Full outputs are written to `output/benchmarks/ppocr_versions_benchmark.md` and `output/benchmarks/ppocr_versions_benchmark.json`. Absolute latency depends on CPU, ONNXRuntime version, thread settings, and image size.
+
+| Model | Total avg (s) | Per image avg (s) | Text lines |
+| --- | ---: | ---: | ---: |
+| PP-OCRv5 | 7.087 | 0.886 | 250 |
+| PP-OCRv6 medium | 27.138 | 3.392 | 242 |
+
+| Image | Size | PP-OCRv5 avg (s) | PP-OCRv6 medium avg (s) | v6/v5 | v5 lines | v6 lines |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| 715873facf064583b44ef28295126fa7.jpg | 1920x2560 | 2.251 | 8.725 | 3.88x | 72 | 64 |
+| 12.jpg | 720x1150 | 0.370 | 1.341 | 3.63x | 4 | 4 |
+| 1.jpg | 720x1150 | 0.317 | 1.134 | 3.58x | 2 | 2 |
+| french_0.jpg | 692x1024 | 0.474 | 1.396 | 2.94x | 6 | 6 |
+| japan_2.jpg | 1536x839 | 1.138 | 5.096 | 4.48x | 50 | 54 |
+| weixin_pay.jpg | 1263x1719 | 0.372 | 2.359 | 6.35x | 3 | 3 |
+| table.jpg | 371x293 | 1.151 | 4.125 | 3.58x | 81 | 75 |
+| 00006737.jpg | 896x528 | 1.015 | 2.963 | 2.92x | 32 | 34 |
+
+Note: PP-OCRv6 medium is larger and is slower than PP-OCRv5 under CPU ONNXRuntime in this local test. Its benefit is broader language coverage and stronger overall accuracy in official benchmarks. For latency-sensitive CPU scenarios, try `ONNXPaddleOcr(ocr_model_size="small")` or `ocr_model_size="tiny"`.
 
 ## General OCR
 

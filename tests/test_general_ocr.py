@@ -11,9 +11,7 @@ from tests.common import TEST_IMAGE_DIR, ensure_result_dir
 
 
 def run_general_ocr():
-    # The default repository only keeps PP-OCRv5 general OCR models.
-    # Set use_angle_cls=True only after downloading the orientation model with:
-    #   python scripts/download_models.py
+    # Defaults to the official PP-OCRv6 medium ONNX detection/recognition models.
     model = ONNXPaddleOcr(use_angle_cls=False, use_gpu=False)
     img = cv2.imread(str(TEST_IMAGE_DIR / "715873facf064583b44ef28295126fa7.jpg"))
     if img is None:

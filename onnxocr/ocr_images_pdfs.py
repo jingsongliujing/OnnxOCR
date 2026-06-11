@@ -213,33 +213,43 @@ class OCRLogic:
 
     def set_model(self, model_name, use_gpu=False):
         """
-        Switch OCR model with hot-swap support. All models use ppocrv5 dictionary.
+        Switch OCR model with hot-swap support.
 
         Args:
             use_gpu: Whether to enable GPU inference.
         """
         import os
         base_model_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "onnxocr", "models"))
-        model_map = {
-            "PP-OCRv5": "ppocrv5",
-            "PP-OCRv4": "ppocrv4",
-            "ch_ppocr_server_v2.0": "ch_ppocr_server_v2.0"
-        }
-        model_dir = model_map.get(model_name, "ppocrv5")
-        model_path = os.path.join(base_model_dir, model_dir)
-        det_model_dir = os.path.join(model_path, "det", "det.onnx")
-        cls_model_dir = os.path.join(model_path, "cls", "cls.onnx")
-        rec_char_dict_path = os.path.join(base_model_dir, "ppocrv5", "ppocrv5_dict.txt")
-        rec_model_dir = os.path.join(model_path, "rec", "rec.onnx") if os.path.exists(os.path.join(model_path, "rec", "rec.onnx")) else None
         ocr_kwargs = dict(
             use_angle_cls=True,
             use_gpu=use_gpu,
-            det_model_dir=det_model_dir,
-            cls_model_dir=cls_model_dir,
-            rec_char_dict_path=rec_char_dict_path
         )
-        if rec_model_dir and os.path.exists(rec_model_dir):
-            ocr_kwargs["rec_model_dir"] = rec_model_dir
+        ppocrv6_map = {
+            "PP-OCRv6": "medium",
+            "PP-OCRv6 medium": "medium",
+            "PP-OCRv6 small": "small",
+            "PP-OCRv6 tiny": "tiny",
+        }
+        if model_name in ppocrv6_map:
+            ocr_kwargs["ocr_model_size"] = ppocrv6_map[model_name]
+        else:
+            model_map = {
+                "PP-OCRv5": "ppocrv5",
+                "PP-OCRv4": "ppocrv4",
+                "ch_ppocr_server_v2.0": "ch_ppocr_server_v2.0"
+            }
+            model_dir = model_map.get(model_name, "ppocrv6")
+            model_path = os.path.join(base_model_dir, model_dir)
+            det_model_dir = os.path.join(model_path, "det", "det.onnx")
+            cls_model_dir = os.path.join(model_path, "cls", "cls.onnx")
+            rec_model_dir = os.path.join(model_path, "rec", "rec.onnx")
+            ocr_kwargs.update(
+                det_model_dir=det_model_dir,
+                cls_model_dir=cls_model_dir,
+                rec_char_dict_path=os.path.join(base_model_dir, "ppocrv5", "ppocrv5_dict.txt"),
+            )
+            if os.path.exists(rec_model_dir):
+                ocr_kwargs["rec_model_dir"] = rec_model_dir
         try:
             self.model = ONNXPaddleOcr(**ocr_kwargs)
             log.info("Model switched successfully: {}", model_name)

@@ -250,10 +250,10 @@ class LayoutMarkdownConverter:
             layout_config["engine_cfg"] = layout_engine_cfg
 
         ocr_config = {
-            "Det.model_path": str(self.model_dir / "ppocrv5" / "det" / "det.onnx"),
-            "Rec.model_path": str(self.model_dir / "ppocrv5" / "rec" / "rec.onnx"),
+            "Det.model_path": str(self.model_dir / "ppocrv6" / "medium" / "det" / "det.onnx"),
+            "Rec.model_path": str(self.model_dir / "ppocrv6" / "medium" / "rec" / "rec.onnx"),
             "Cls.model_path": str(self.model_dir / "ppocrv5" / "cls" / "cls.onnx"),
-            "Rec.rec_keys_path": str(self.model_dir / "ppocrv5" / "ppocrv5_dict.txt"),
+            "Rec.rec_keys_path": str(self.model_dir / "ppocrv6" / "ppocrv6_dict.txt"),
             "Global.use_cls": False,
             "use_det_mode": "ocr",
             "seal_enable": False,

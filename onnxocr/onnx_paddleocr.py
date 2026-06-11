@@ -17,6 +17,59 @@ from .visualization import (
 
 log = get_logger("onnx_paddleocr")
 
+PPOCRV6_MODEL_CONFIGS = {
+    "medium": {
+        "det_db_box_thresh": 0.45,
+        "rec_char_dict_path": "ppocrv6_dict.txt",
+    },
+    "small": {
+        "det_db_box_thresh": 0.45,
+        "rec_char_dict_path": "ppocrv6_dict.txt",
+    },
+    "tiny": {
+        "det_db_box_thresh": 0.4,
+        "rec_char_dict_path": "ppocrv6_tiny_dict.txt",
+    },
+}
+
+
+def _normalize_ppocrv6_size(model_name=None, model_size=None):
+    if model_size:
+        size = str(model_size).lower()
+    elif model_name:
+        normalized = str(model_name).lower()
+        size = next((name for name in PPOCRV6_MODEL_CONFIGS if name in normalized), None)
+    else:
+        size = "medium"
+
+    if size not in PPOCRV6_MODEL_CONFIGS:
+        raise ValueError(
+            "Unsupported PP-OCRv6 model size. Expected one of: medium, small, tiny."
+        )
+    return size
+
+
+def _build_ppocrv6_defaults(kwargs):
+    model_name = kwargs.pop("ocr_model_name", None)
+    model_size = kwargs.pop("ocr_model_size", None)
+    size = _normalize_ppocrv6_size(model_name=model_name, model_size=model_size)
+    model_root = Path(__file__).resolve().parent / "models" / "ppocrv6"
+    config = PPOCRV6_MODEL_CONFIGS[size]
+
+    defaults = {
+        "det_model_dir": str(model_root / size / "det" / "det.onnx"),
+        "rec_model_dir": str(model_root / size / "rec" / "rec.onnx"),
+        "rec_char_dict_path": str(model_root / config["rec_char_dict_path"]),
+        "rec_image_shape": "3, 48, 320",
+        "det_limit_side_len": 736,
+        "det_limit_type": "min",
+        "det_db_thresh": 0.2,
+        "det_db_box_thresh": config["det_db_box_thresh"],
+        "det_db_unclip_ratio": 1.4,
+        "det_db_max_candidates": 3000,
+    }
+    return {key: value for key, value in defaults.items() if key not in kwargs}
+
 
 class ONNXPaddleOcr(TextSystem):
     def __init__(self, **kwargs):
@@ -73,7 +126,9 @@ class ONNXPaddleOcr(TextSystem):
             inference_args_dict[action.dest] = action.default
         params = argparse.Namespace(**inference_args_dict)
 
+        model_defaults = _build_ppocrv6_defaults(kwargs)
         params.rec_image_shape = "3, 48, 320"
+        params.__dict__.update(model_defaults)
         params.__dict__.update(**kwargs)
 
         super().__init__(params)
